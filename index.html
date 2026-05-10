@@ -8,55 +8,92 @@
     <style>
         body { 
             margin: 0; 
-            background: #1a1a1a; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
+            background: #111; 
             overflow: hidden; 
+            height: 100vh; 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #viewport { 
+            flex: 1;
+            width: 100vw; 
+            overflow: auto; /* Scroll libre */
+            display: flex;
+            justify-content: center; /* Centra horizontalmente */
+            align-items: center; /* Centra verticalmente */
         }
 
+        #canvas { 
+            display: block;
+            transition: transform 0.2s ease-out; 
+            transform-origin: center center; 
+            padding: 300px; /* Espacio para que el 150% no choque con los bordes */
+        }
+        
+        /* Tamaño real A3 */
         #flipbook { 
-            /* MÁS MARGEN: Ahora el libro ocupa solo el 60% del ancho */
-            width: 60vw; 
-            height: 65vh; 
-        }
-
-        .page { 
+            width: 1414px !important; 
+            height: 1000px !important; 
             background: white; 
-            width: 100%; 
-            height: 100%; 
-            /* Sombra suave en los bordes exteriores solamente */
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            box-shadow: 0 0 50px rgba(0,0,0,0.6);
         }
+        
+        .page { background: white; width: 100%; height: 100%; }
+        .page img { width: 100%; height: 100%; object-fit: fill; }
 
-        .page img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: stretch; 
+        /* Sin sombras internas */
+        canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
+
+        .zoom-bar { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999; 
+            background: rgba(30,30,30,0.9); 
+            padding: 12px 25px; 
+            border-radius: 50px; 
+            border: 1px solid #444; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+            backdrop-filter: blur(10px);
         }
+        
+        /* El slider ahora va de 0.2 a 1.5 (150%) */
+        #zoomRange { width: 180px; accent-color: #fff; cursor: pointer; }
+        .zoom-bar span { color: white; font-family: sans-serif; font-size: 10px; font-weight: bold; letter-spacing: 2px; }
     </style>
 </head>
 <body>
-    <div id="flipbook"></div>
+
+    <div id="viewport">
+        <div id="canvas">
+            <div id="flipbook"></div>
+        </div>
+    </div>
+
+    <div class="zoom-bar">
+        <span>ZOOM</span>
+        <input type="range" id="zoomRange" min="0.2" max="1.5" step="0.01" value="1">
+    </div>
 
     <script>
-        const totalPaginas = 44; 
-        const carpeta = 'paginas/'; 
+        const totalPaginas = 44;
+        const carpeta = 'paginas/';
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 1414, 
-            height: 1000, 
-            size: 'stretch',
-            
-            // ELIMINAR SOMBRA CENTRAL: Ponemos la opacidad a 0
-            maxShadowOpacity: 0, 
-            
+            width: 1414,
+            height: 1000,
+            size: 'fixed',
             showCover: true, 
-            mobileScrollSupport: true,
-            autoSize: true,
-            usePortrait: true, 
-            flippingTime: 700
+            usePortrait: false, 
+            drawShadow: false,
+            maxShadowOpacity: 0,
+            showShadows: false,
+            flippingTime: 1000,
+            mobileScrollSupport: true
         });
 
         function loadImages() {
@@ -65,13 +102,45 @@
                 const div = document.createElement('div');
                 div.className = 'page';
                 let nombreArchivo = (i === 1) ? 'Portfolio.jpg' : 'Portfolio' + i + '.jpg';
-                div.innerHTML = '<img src="' + carpeta + nombreArchivo + '" alt="Página ' + i + '">';
+                div.innerHTML = `<img src="${carpeta}${nombreArchivo}" alt="Pág ${i}">`;
                 pages.push(div);
             }
             pageFlip.loadFromHTML(pages);
         }
 
         loadImages();
+
+        const zoomRange = document.getElementById('zoomRange');
+        const canvas = document.getElementById('canvas');
+        const viewport = document.getElementById('viewport');
+
+        zoomRange.addEventListener('input', (e) => {
+            const scale = e.target.value;
+            canvas.style.transform = `scale(${scale})`;
+            
+            // Si el zoom supera el tamaño de pantalla, ajustamos el centrado
+            if (scale > 1) {
+                viewport.style.alignItems = 'flex-start';
+                viewport.style.justifyContent = 'flex-start';
+            } else {
+                viewport.style.alignItems = 'center';
+                viewport.style.justifyContent = 'center';
+            }
+        });
+
+        // CARGA AL 100% (Correctamente)
+        window.onload = () => {
+            // Forzamos el valor 1 (100%) al inicio
+            zoomRange.value = 1;
+            canvas.style.transform = `scale(1)`;
+            
+            // Pequeño delay para centrar el scroll si el 100% es muy grande para la pantalla
+            setTimeout(() => {
+                const scrollX = (viewport.scrollWidth - viewport.clientWidth) / 2;
+                const scrollY = (viewport.scrollHeight - viewport.clientHeight) / 2;
+                viewport.scrollTo(scrollX, scrollY);
+            }, 100);
+        };
     </script>
 </body>
 </html>
