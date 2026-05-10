@@ -12,17 +12,25 @@
             font-family: 'Constantia', serif; 
         }
         
+        /* Contenedor principal: Actúa como ventana */
         #viewport { 
             flex: 1; width: 100vw; height: 100vh; 
-            overflow: hidden; /* Se activa dinámicamente */
-            display: flex; justify-content: center; align-items: center;
-            touch-action: pan-x pan-y; /* Permite scroll táctil nativo */
+            overflow: auto; /* Permite scroll cuando el contenido es grande */
+            display: block; 
         }
 
+        /* Área de scroll: Un espacio gigante para que el libro siempre tenga "sitio" */
+        #scroll-area {
+            width: 5000px; height: 3000px;
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* El canvas: donde vive el flipbook */
         #canvas { 
-            display: block; transition: transform 0.3s ease; 
-            transform-origin: center center; will-change: transform;
-            padding: 50px; /* Margen para que el libro no toque los bordes al scrollear */
+            display: block; 
+            transform-origin: center center;
+            will-change: transform;
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
@@ -31,30 +39,30 @@
         
         canvas, .st-page-shadow { display: none !important; }
 
-        /* INTERFAZ ABAJO */
+        /* INTERFAZ */
         .ui-wrapper {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
             width: 90%; max-width: 500px;
         }
-
         .control-bar { 
             background: rgba(20, 20, 20, 0.95); padding: 12px 25px; border-radius: 50px; 
             border: 1px solid #444; display: flex; align-items: center; justify-content: space-between; 
-            gap: 15px; backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            gap: 15px; backdrop-filter: blur(15px);
         }
-
         .label, .page-counter { color: white; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
         .page-counter { color: #888; text-align: right; min-width: 65px; }
         #zoomRange { flex: 1; accent-color: #fff; cursor: pointer; height: 2px; }
 
         @media (max-width: 768px) {
-            .ui-wrapper { width: 92%; bottom: 20px; }
+            .ui-wrapper { bottom: 20px; }
         }
     </style>
 </head>
 <body>
     <div id="viewport">
-        <div id="canvas"><div id="flipbook"></div></div>
+        <div id="scroll-area">
+            <div id="canvas"><div id="flipbook"></div></div>
+        </div>
     </div>
 
     <div class="ui-wrapper">
@@ -74,9 +82,7 @@
             width: 1414, height: 1000, size: 'fixed', 
             showCover: true, usePortrait: false, flippingTime: 1000, 
             startPage: 0, drawShadow: false, showPageCorners: false,
-            mobileScrollSupport: false, // Desactivamos el scroll de la librería
-            useMouseEvents: true,
-            clickEventForward: true
+            mobileScrollSupport: false
         });
 
         function loadImages() {
@@ -93,15 +99,16 @@
 
         pageFlip.on('flip', (e) => {
             document.getElementById('pageDisplay').innerText = `PAG. ${e.data + 1} / ${totalPaginas}`;
-            resetZoom();
         });
 
-        // Bloqueo de paso de página si hay zoom activo
+        // Al empezar a pasar página, bajamos el zoom un poco para que sea fluido
         pageFlip.on('changeState', (e) => {
-            const scale = parseFloat(document.getElementById('zoomRange').value);
-            if (scale > initialScale + 0.05 && e.data === 'flipping') {
-                // Si intenta pasar página con zoom, reseteamos para evitar bugs
-                resetZoom();
+            if (e.data === 'flipping') {
+                const z = document.getElementById('zoomRange');
+                if (parseFloat(z.value) > initialScale + 0.5) {
+                    z.value = initialScale + 0.5;
+                    applyScale(initialScale + 0.5);
+                }
             }
         });
 
@@ -114,47 +121,4 @@
             
             const zoomRange = document.getElementById('zoomRange');
             zoomRange.min = initialScale;
-            zoomRange.max = isMobile ? 4.0 : 2.5; 
-            zoomRange.value = initialScale;
-            
-            applyScale(initialScale);
-        }
-
-        function applyScale(scale) {
-            const canvas = document.getElementById('canvas');
-            const vp = document.getElementById('viewport');
-            canvas.style.transform = `scale(${scale})`;
-            
-            if (scale > initialScale + 0.05) {
-                vp.style.overflow = 'auto'; // Habilita desplazamiento libre con el dedo
-                // Desactivamos eventos de la librería para que no pase páginas sin querer
-                pageFlip.updateConfig({useMouseEvents: false, clickEventForward: false});
-            } else {
-                vp.style.overflow = 'hidden';
-                vp.scrollTo(0, 0);
-                // Reactivamos eventos cuando el zoom es normal
-                pageFlip.updateConfig({useMouseEvents: true, clickEventForward: true});
-            }
-        }
-
-        function resetZoom() {
-            const zoomRange = document.getElementById('zoomRange');
-            zoomRange.value = initialScale;
-            applyScale(initialScale);
-        }
-
-        loadImages();
-        window.onload = initZoom;
-        window.onresize = initZoom;
-
-        document.getElementById('zoomRange').addEventListener('input', (e) => {
-            applyScale(parseFloat(e.target.value));
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') pageFlip.flipNext();
-            if (e.key === 'ArrowLeft') pageFlip.flipPrev();
-        });
-    </script>
-</body>
-</html>
+            zoomRange.
