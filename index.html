@@ -1,3 +1,10 @@
+¡No te preocupes, esto tiene fácil solución! El problema es que al meterle tanto padding (1000px) para arreglar el zoom del móvil, el navegador en ordenador se vuelve loco intentando calcular el centro del "scroll" y por eso aparece desplazado.
+
+Para arreglarlo y que quede perfectamente centrado tanto en PC como en móvil, vamos a simplificar la estructura: el canvas no tendrá padding, sino que usaremos el viewport para centrarlo todo con Flexbox.
+
+Aquí tienes el código corregido y estable:
+HTML
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -12,16 +19,23 @@
             font-family: 'Constantia', 'Palatino Linotype', 'Palatino', 'Georgia', serif; 
         }
         
+        /* Contenedor principal que permite el scroll cuando hay zoom */
         #viewport { 
-            flex: 1; width: 100vw; height: 100vh; overflow: hidden; 
-            display: flex; justify-content: center; align-items: center; 
-            position: relative;
+            flex: 1; width: 100vw; height: 100vh; 
+            overflow: auto; /* Permitimos scroll */
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            background: #111;
         }
 
+        /* Contenedor del flipbook que escala */
         #canvas { 
-            display: block; transition: transform 0.25s ease-out; 
-            transform-origin: center center; /* Mantiene el zoom centrado */
-            padding: 1000px; /* Espacio de sobra para scroll infinito */
+            display: block; 
+            transition: transform 0.25s ease-out; 
+            transform-origin: center center;
+            flex-shrink: 0; /* Evita que el contenedor se colapse */
+            margin: 500px; /* Margen de seguridad para poder scrollear al hacer zoom */
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
@@ -29,7 +43,7 @@
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        /* INTERFAZ INTEGRADA (Como en la imagen) */
+        /* INTERFAZ INTEGRADA (Constantia) */
         .ui-wrapper {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
             width: 90%; max-width: 500px;
@@ -44,15 +58,12 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .label { 
+        .label, .page-counter { 
             color: white; font-size: 11px; letter-spacing: 2px; 
             text-transform: uppercase; white-space: nowrap; 
         }
 
-        .page-counter { 
-            color: #aaa; font-size: 11px; letter-spacing: 1px; 
-            white-space: nowrap; min-width: 70px; text-align: right;
-        }
+        .page-counter { color: #aaa; min-width: 80px; text-align: right; }
 
         #zoomRange { 
             flex: 1; accent-color: #fff; cursor: pointer; height: 2px; 
@@ -61,8 +72,8 @@
 
         @media (max-width: 768px) {
             .ui-wrapper { width: 95%; bottom: 20px; }
-            .control-bar { padding: 10px 18px; gap: 12px; }
-            #canvas { padding: 500px; } /* Ajuste para móvil */
+            .control-bar { padding: 10px 18px; gap: 10px; }
+            #canvas { margin: 300px; } /* Menos margen en móvil */
         }
     </style>
 </head>
@@ -122,34 +133,28 @@
             zoomRange.value = initialScale;
             canvas.style.transform = `scale(${initialScale})`;
             
-            // Centramos el scroll inicial
+            // Recentramos la vista
+            centerView();
+        }
+
+        function centerView() {
             const viewport = document.getElementById('viewport');
-            viewport.scrollLeft = (canvas.offsetWidth - viewport.offsetWidth) / 2;
-            viewport.scrollTop = (canvas.offsetHeight - viewport.offsetHeight) / 2;
+            const canvas = document.getElementById('canvas');
+            viewport.scrollLeft = (canvas.offsetWidth + 1000 - viewport.offsetWidth) / 2;
+            viewport.scrollTop = (canvas.offsetHeight + 1000 - viewport.offsetHeight) / 2;
         }
 
         loadImages();
-        window.onload = initZoom;
+        window.onload = () => {
+            initZoom();
+            setTimeout(centerView, 100); // Pequeño delay para asegurar que el DOM cargó
+        };
         window.onresize = initZoom;
 
         document.getElementById('zoomRange').addEventListener('input', (e) => {
             const scale = parseFloat(e.target.value);
             const canvas = document.getElementById('canvas');
-            const viewport = document.getElementById('viewport');
-            
             canvas.style.transform = `scale(${scale})`;
-            
-            // Si el zoom es mayor al inicial, permitimos scroll, si no, lo bloqueamos centrado
-            if (scale > initialScale + 0.01) {
-                viewport.style.overflow = 'auto';
-            } else {
-                viewport.style.overflow = 'hidden';
-                viewport.scrollTo({
-                    left: (canvas.offsetWidth - viewport.offsetWidth) / 2,
-                    top: (canvas.offsetHeight - viewport.offsetHeight) / 2,
-                    behavior: 'smooth'
-                });
-            }
         });
 
         document.addEventListener('keydown', (e) => {
