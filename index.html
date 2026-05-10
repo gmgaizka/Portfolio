@@ -14,22 +14,24 @@
         
         #viewport { 
             flex: 1; width: 100vw; height: 100vh; 
-            overflow: hidden; display: flex; justify-content: center; align-items: center;
+            overflow: hidden; /* Se activa dinámicamente */
+            display: flex; justify-content: center; align-items: center;
+            touch-action: pan-x pan-y; /* Permite scroll táctil nativo */
         }
 
         #canvas { 
             display: block; transition: transform 0.3s ease; 
             transform-origin: center center; will-change: transform;
+            padding: 50px; /* Margen para que el libro no toque los bordes al scrollear */
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
         .page { background: white; width: 1414px !important; height: 1000px !important; }
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         
-        /* Eliminamos sombras y la raya central */
         canvas, .st-page-shadow { display: none !important; }
 
-        /* INTERFAZ ABAJO (Z-INDEX ALTO) */
+        /* INTERFAZ ABAJO */
         .ui-wrapper {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
             width: 90%; max-width: 500px;
@@ -47,7 +49,6 @@
 
         @media (max-width: 768px) {
             .ui-wrapper { width: 92%; bottom: 20px; }
-            .control-bar { padding: 10px 18px; }
         }
     </style>
 </head>
@@ -73,7 +74,9 @@
             width: 1414, height: 1000, size: 'fixed', 
             showCover: true, usePortrait: false, flippingTime: 1000, 
             startPage: 0, drawShadow: false, showPageCorners: false,
-            mobileScrollSupport: false
+            mobileScrollSupport: false, // Desactivamos el scroll de la librería
+            useMouseEvents: true,
+            clickEventForward: true
         });
 
         function loadImages() {
@@ -88,15 +91,18 @@
             pageFlip.loadFromHTML(pages);
         }
 
-        // Si se intenta pasar página, reseteamos el zoom para evitar el bug visual
         pageFlip.on('flip', (e) => {
             document.getElementById('pageDisplay').innerText = `PAG. ${e.data + 1} / ${totalPaginas}`;
             resetZoom();
         });
 
-        // También reseteamos si el usuario empieza a arrastrar la página
+        // Bloqueo de paso de página si hay zoom activo
         pageFlip.on('changeState', (e) => {
-            if (e.data === 'flipping') resetZoom();
+            const scale = parseFloat(document.getElementById('zoomRange').value);
+            if (scale > initialScale + 0.05 && e.data === 'flipping') {
+                // Si intenta pasar página con zoom, reseteamos para evitar bugs
+                resetZoom();
+            }
         });
 
         function initZoom() {
@@ -118,8 +124,17 @@
             const canvas = document.getElementById('canvas');
             const vp = document.getElementById('viewport');
             canvas.style.transform = `scale(${scale})`;
-            vp.style.overflow = (scale > initialScale + 0.02) ? 'auto' : 'hidden';
-            if (scale <= initialScale + 0.02) vp.scrollTo(0, 0);
+            
+            if (scale > initialScale + 0.05) {
+                vp.style.overflow = 'auto'; // Habilita desplazamiento libre con el dedo
+                // Desactivamos eventos de la librería para que no pase páginas sin querer
+                pageFlip.updateConfig({useMouseEvents: false, clickEventForward: false});
+            } else {
+                vp.style.overflow = 'hidden';
+                vp.scrollTo(0, 0);
+                // Reactivamos eventos cuando el zoom es normal
+                pageFlip.updateConfig({useMouseEvents: true, clickEventForward: true});
+            }
         }
 
         function resetZoom() {
