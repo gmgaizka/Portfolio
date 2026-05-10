@@ -3,32 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Portfolio | Flipbook</title>
+    <title>Mi Portfolio | Gaizka García</title>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            background: #e5e5e5; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden; 
-        }
-        #flipbook { 
-            width: 100%; 
-            height: 100vh; 
-        }
-        .page { 
-            background: white; 
-            width: 100%; 
-            height: 100%; 
-        }
-        .page img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: contain; /* Para que no se deformen las imágenes */
-        }
+        body { margin: 0; background: #333; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #flipbook { width: 100%; height: 100vh; }
+        .page { background: white; width: 100%; height: 100%; }
+        .page img { width: 100%; height: 100%; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -36,7 +17,7 @@
 
     <script>
         const totalPaginas = 44; 
-        const carpeta = 'paginas/'; 
+        const carpeta = 'PAGINAS/'; // <--- CAMBIADO A MAYÚSCULAS
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 900,
@@ -44,9 +25,7 @@
             size: 'stretch',
             showCover: true,
             maxShadowOpacity: 0.3,
-            mobileScrollSupport: true,
-            usePortrait: true,
-            autoSize: true
+            mobileScrollSupport: true
         });
 
         function loadImages() {
@@ -55,8 +34,8 @@
                 const div = document.createElement('div');
                 div.className = 'page';
                 
-                // Lógica para tus nombres de archivo: Portfolio.jpg, Portfolio2.jpg, etc.
-                let nombreArchivo = (i === 1) ? 'Portfolio.jpg' : `Portfolio${i}.jpg`;
+                // AJUSTADO: Portfolio.JPG y Portfolio2.JPG (con JPG en mayúsculas)
+                let nombreArchivo = (i === 1) ? 'Portfolio.JPG' : `Portfolio${i}.JPG`;
                 
                 div.innerHTML = `<img src="${carpeta}${nombreArchivo}" alt="Página ${i}">`;
                 pages.push(div);
