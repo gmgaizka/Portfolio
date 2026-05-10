@@ -7,23 +7,53 @@
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
         body { margin: 0; background: #111; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        #viewport { width: 100vw; height: 100vh; overflow: auto; display: flex; justify-content: center; align-items: center; }
-        #canvas { transition: transform 0.1s ease; transform-origin: center center; padding: 100px; }
         
-        /* Mantenemos el tamaño A3 Horizontal */
-        #flipbook { width: 1414px !important; height: 1000px !important; background: white; }
+        #viewport { 
+            width: 100vw; 
+            height: 100vh; 
+            overflow: auto; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        
+        #canvas { 
+            transition: transform 0.1s ease; 
+            transform-origin: center center; 
+            padding: 100px; 
+        }
+        
+        /* Contenedor del flipbook con proporciones A3 */
+        #flipbook { 
+            width: 1414px !important; 
+            height: 1000px !important; 
+            background: transparent; 
+        }
         
         .page { background: white; width: 100%; height: 100%; }
         .page img { width: 100%; height: 100%; object-fit: fill; }
 
-        /* Seguimos bloqueando cualquier sombra central */
+        /* Eliminación total de sombras y canvas de efectos */
         canvas, .st-page-shadow { 
             display: none !important; 
             opacity: 0 !important; 
             visibility: hidden !important;
         }
 
-        .zoom-bar { position: fixed; bottom: 30px; z-index: 9999; background: rgba(20,20,20,0.95); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; display: flex; align-items: center; gap: 20px; }
+        .zoom-bar { 
+            position: fixed; 
+            bottom: 30px; 
+            z-index: 9999; 
+            background: rgba(20,20,20,0.95); 
+            padding: 15px 30px; 
+            border-radius: 50px; 
+            border: 1px solid #333; 
+            display: flex; 
+            align-items: center; 
+            gap: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        
         #zoomRange { width: 200px; accent-color: #fff; cursor: pointer; }
         .zoom-bar span { color: white; font-family: sans-serif; font-size: 11px; font-weight: bold; letter-spacing: 2px; }
     </style>
@@ -38,7 +68,7 @@
 
     <div class="zoom-bar">
         <span>ZOOM</span>
-        <input type="range" id="zoomRange" min="0.2" max="3" step="0.05" value="0.7">
+        <input type="range" id="zoomRange" min="0.1" max="3" step="0.05" value="0.7">
     </div>
 
     <script>
@@ -50,16 +80,19 @@
             height: 1000,
             size: 'fixed',
             
-            // LA CLAVE: showCover en true hace que la página 1 sea individual
+            // CONFIGURACIÓN PARA PORTADA ÚNICA
             showCover: true, 
             usePortrait: false, 
+            startPage: 0,
             
+            // DESACTIVACIÓN DE SOMBRAS
             drawShadow: false,
             maxShadowOpacity: 0,
             showShadows: false,
             
             flippingTime: 1000,
-            mobileScrollSupport: true
+            mobileScrollSupport: true,
+            autoSize: true
         });
 
         function loadImages() {
@@ -67,7 +100,6 @@
             for (let i = 1; i <= totalPaginas; i++) {
                 const div = document.createElement('div');
                 div.className = 'page';
-                // Aseguramos la carga correcta de la portada y el resto
                 let nombreArchivo = (i === 1) ? 'Portfolio.jpg' : 'Portfolio' + i + '.jpg';
                 div.innerHTML = `<img src="${carpeta}${nombreArchivo}" alt="Pág ${i}">`;
                 pages.push(div);
@@ -77,18 +109,19 @@
 
         loadImages();
 
+        // Lógica de Zoom
         const zoomRange = document.getElementById('zoomRange');
         const canvas = document.getElementById('canvas');
         zoomRange.addEventListener('input', (e) => {
             canvas.style.transform = `scale(${e.target.value})`;
         });
 
+        // Ajuste inicial para que la portada se vea bien al cargar
         window.onload = () => {
-            // Ajustamos el zoom inicial para que se vea el libro abierto cómodamente
-            const initialScale = (window.innerWidth * 0.9) / 2828; 
-            const val = Math.min(Math.max(initialScale, 0.2), 0.8);
+            const initialScale = (window.innerWidth * 0.45) / 1414; 
+            const val = Math.min(Math.max(initialScale, 0.2), 0.7);
             zoomRange.value = val;
-            canvas.style.transform = `scale(${val})`;
+            canvas.style.transform = `scale(${initialScale})`;
         };
     </script>
 </body>
