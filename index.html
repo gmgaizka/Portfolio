@@ -18,16 +18,15 @@
             transform-origin: center center; padding: 500px; 
         }
 
-        /* Ajuste de color de fondo para que no se vea el lienzo blanco tras la portada */
+        /* Contenedor flexible para evitar el estiramiento */
         #flipbook { 
-            width: 1414px !important; height: 1000px !important; 
+            width: 1414px; height: 1000px; 
             background: transparent; 
         }
 
-        .page { background: white; width: 100%; height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .page img { width: 100%; height: 100%; object-fit: fill; }
+        .page { background: white; width: 100%; height: 100%; }
+        .page img { width: 100%; height: 100%; object-fit: contain; } /* 'contain' evita que se chafen */
         
-        /* Eliminamos rastro de sombras automáticas */
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
         .zoom-bar { 
@@ -53,20 +52,16 @@
         const carpeta = 'paginas/';
         let initialScale = 1;
 
-        // Configuramos la instancia
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 707, // Ancho de UNA página (1414 / 2)
+            width: 707, 
             height: 1000,
-            size: 'fixed',
-            showCover: true, // Esto hace que la pag 1 sea individual
+            size: 'stretch', // Cambiado a stretch para que respete proporciones
+            showCover: true,
             usePortrait: false,
             drawShadow: false,
             flippingTime: 1000,
             startPage: 0,
-            minWidth: 707,
-            maxWidth: 1414,
-            minHeight: 1000,
-            maxHeight: 1000
+            showShadows: false
         });
 
         function loadImages() {
@@ -82,9 +77,9 @@
         }
 
         function initZoom() {
-            // Calculamos sobre el ancho total (1414) para que quepan las dos páginas al abrirse
-            const scaleW = (window.innerWidth * 0.65) / 1414;
-            const scaleH = (window.innerHeight * 0.75) / 1000;
+            // Ajustamos el zoom inicial para que se vea la portada con margen
+            const scaleW = (window.innerWidth * 0.5) / 707;
+            const scaleH = (window.innerHeight * 0.7) / 1000;
             
             initialScale = Math.min(scaleW, scaleH);
             
