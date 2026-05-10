@@ -14,53 +14,35 @@
         
         #viewport { 
             flex: 1; width: 100vw; height: 100vh; 
-            overflow: hidden; 
-            position: relative;
-            display: flex; justify-content: center; align-items: center;
-            z-index: 1; /* El libro se mantiene detrás de la barra */
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
         #canvas { 
-            display: block; 
-            transition: transform 0.2s ease-out; 
-            transform-origin: center center;
-            will-change: transform;
+            display: block; transition: transform 0.3s ease; 
+            transform-origin: center center; will-change: transform;
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
         .page { background: white; width: 1414px !important; height: 1000px !important; }
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         
-        /* Eliminamos cualquier rastro de sombras o canvas sobrantes de la librería */
-        canvas, .st-page-shadow { display: none !important; visibility: hidden !important; opacity: 0 !important; }
+        /* Eliminamos sombras y la raya central */
+        canvas, .st-page-shadow { display: none !important; }
 
-        /* INTERFAZ (Siempre al frente) */
+        /* INTERFAZ ABAJO (Z-INDEX ALTO) */
         .ui-wrapper {
-            position: fixed; 
-            bottom: 30px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            z-index: 100; /* Prioridad máxima sobre el libro */
-            width: 90%; 
-            max-width: 500px;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
+            width: 90%; max-width: 500px;
         }
 
         .control-bar { 
-            background: rgba(20, 20, 20, 0.95); 
-            padding: 12px 25px; border-radius: 50px; 
-            border: 1px solid #444; 
-            display: flex; align-items: center; justify-content: space-between; 
-            gap: 15px; backdrop-filter: blur(15px); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            background: rgba(20, 20, 20, 0.95); padding: 12px 25px; border-radius: 50px; 
+            border: 1px solid #444; display: flex; align-items: center; justify-content: space-between; 
+            gap: 15px; backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
-        .label, .page-counter { 
-            color: white; font-size: 10px; letter-spacing: 2px; 
-            text-transform: uppercase; white-space: nowrap; 
-        }
-
+        .label, .page-counter { color: white; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
         .page-counter { color: #888; text-align: right; min-width: 65px; }
-
         #zoomRange { flex: 1; accent-color: #fff; cursor: pointer; height: 2px; }
 
         @media (max-width: 768px) {
@@ -88,15 +70,9 @@
         let initialScale = 1;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 1414, 
-            height: 1000, 
-            size: 'fixed', 
-            showCover: true, 
-            usePortrait: false, 
-            flippingTime: 1000, 
-            startPage: 0,
-            drawShadow: false, // ELIMINA LA RAYA CENTRAL
-            showPageCorners: false,
+            width: 1414, height: 1000, size: 'fixed', 
+            showCover: true, usePortrait: false, flippingTime: 1000, 
+            startPage: 0, drawShadow: false, showPageCorners: false,
             mobileScrollSupport: false
         });
 
@@ -112,54 +88,11 @@
             pageFlip.loadFromHTML(pages);
         }
 
+        // Si se intenta pasar página, reseteamos el zoom para evitar el bug visual
         pageFlip.on('flip', (e) => {
             document.getElementById('pageDisplay').innerText = `PAG. ${e.data + 1} / ${totalPaginas}`;
+            resetZoom();
         });
 
-        function initZoom() {
-            const isMobile = window.innerWidth <= 768;
-            const marginFactor = isMobile ? 0.95 : 0.65;
-            
-            const scaleW = (window.innerWidth * marginFactor) / 1414;
-            const scaleH = (window.innerHeight * marginFactor) / 1000;
-            
-            initialScale = Math.min(scaleW, scaleH);
-            
-            const zoomRange = document.getElementById('zoomRange');
-            const canvas = document.getElementById('canvas');
-            const vp = document.getElementById('viewport');
-
-            zoomRange.min = initialScale;
-            zoomRange.max = isMobile ? 4.0 : 2.5; 
-            zoomRange.value = initialScale;
-            
-            canvas.style.transform = `scale(${initialScale})`;
-            vp.style.overflow = 'hidden';
-        }
-
-        loadImages();
-        window.onload = initZoom;
-        window.onresize = initZoom;
-
-        document.getElementById('zoomRange').addEventListener('input', (e) => {
-            const scale = parseFloat(e.target.value);
-            const canvas = document.getElementById('canvas');
-            const vp = document.getElementById('viewport');
-            
-            canvas.style.transform = `scale(${scale})`;
-            
-            if (scale > initialScale + 0.02) {
-                vp.style.overflow = 'auto';
-            } else {
-                vp.style.overflow = 'hidden';
-                vp.scrollTo(0, 0);
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') pageFlip.flipNext();
-            if (e.key === 'ArrowLeft') pageFlip.flipPrev();
-        });
-    </script>
-</body>
-</html>
+        // También reseteamos si el usuario empieza a arrastrar la página
+        pageFlip.on('changeState', (e
