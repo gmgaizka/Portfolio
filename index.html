@@ -6,87 +6,24 @@
     <title>Portfolio | Gaizka García</title>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            background: #111; 
-            overflow: hidden; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
+        body { margin: 0; background: #111; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #viewport { width: 100vw; height: 100vh; overflow: auto; display: flex; justify-content: center; align-items: center; }
+        #canvas { transition: transform 0.1s ease; transform-origin: center center; padding: 100px; display: block; }
+        #flipbook { width: 1414px !important; height: 1000px !important; }
+        .page { background: white; width: 100%; height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.4); }
+        .page img { width: 100%; height: 100%; object-fit: fill; }
 
-        #viewport {
-            width: 100vw;
-            height: 100vh;
-            overflow: auto; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #canvas {
-            transition: transform 0.1s ease;
-            transform-origin: center center;
-            padding: 100px;
-            display: block;
-        }
-
-        #flipbook { 
-            width: 1414px !important; 
-            height: 1000px !important;
-        }
-
-        .page { 
-            background: white; 
-            width: 100%; 
-            height: 100%; 
-            /* Sombra exterior suave para dar volumen al libro, no al pliegue */
-            box-shadow: 0 0 20px rgba(0,0,0,0.4); 
-        }
-
-        .page img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: fill; 
-        }
-
-        /* --- AQUÍ ESTÁ EL TRUCO FINAL PARA LA SOMBRA CENTRAL --- */
-        /* Forzamos que cualquier elemento de sombra interno sea invisible */
-        .st-page-shadow {
+        /* ELIMINACIÓN AGRESIVA DE SOMBRAS POR CSS */
+        div[class*="shadow"], div[class*="st-"], .st-page-shadow {
             display: none !important;
+            background: none !important;
+            box-shadow: none !important;
             opacity: 0 !important;
-            visibility: hidden !important;
         }
 
-        .zoom-bar {
-            position: fixed;
-            bottom: 30px;
-            z-index: 9999;
-            background: rgba(20,20,20,0.95);
-            padding: 15px 30px;
-            border-radius: 50px;
-            border: 1px solid #333;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-        }
-
-        #zoomRange { 
-            width: 200px; 
-            accent-color: #fff; 
-            cursor: pointer; 
-        }
-
-        .zoom-bar span { 
-            color: white; 
-            font-family: sans-serif; 
-            font-size: 11px; 
-            font-weight: bold; 
-            letter-spacing: 2px;
-        }
+        .zoom-bar { position: fixed; bottom: 30px; z-index: 9999; background: rgba(20,20,20,0.95); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
+        #zoomRange { width: 200px; accent-color: #fff; cursor: pointer; }
+        .zoom-bar span { color: white; font-family: sans-serif; font-size: 11px; font-weight: bold; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -110,18 +47,12 @@
             width: 1414,
             height: 1000,
             size: 'fixed',
-            minWidth: 1414,
-            minHeight: 1000,
-            maxWidth: 1414,
-            maxHeight: 1000,
             showCover: true,
             usePortrait: false,
-            flippingTime: 1000,
-            
-            // --- TRIPLE SEGURIDAD CONTRA SOMBRAS ---
-            drawShadow: false, // 1. Apaga el dibujado de sombras
-            maxShadowOpacity: 0, // 2. Opacidad a cero
-            showShadows: false // 3. Por si acaso
+            drawShadow: false,
+            maxShadowOpacity: 0,
+            showShadows: false,
+            flippingTime: 800
         });
 
         function loadImages() {
@@ -138,9 +69,27 @@
 
         loadImages();
 
+        // --- EL SCRIPT VIGILANTE (ELIMINADOR DE SOMBRAS EN TIEMPO REAL) ---
+        const observer = new MutationObserver(() => {
+            const shadows = document.querySelectorAll('[class*="shadow"], [class*="st-"]');
+            shadows.forEach(el => {
+                if (!el.classList.contains('page')) { // No borrar las páginas, solo las sombras
+                    el.style.display = 'none';
+                    el.style.opacity = '0';
+                    el.style.boxShadow = 'none';
+                    el.style.background = 'none';
+                }
+            });
+        });
+
+        observer.observe(document.getElementById('flipbook'), {
+            childList: true,
+            subtree: true
+        });
+
+        // Zoom logic
         const zoomRange = document.getElementById('zoomRange');
         const canvas = document.getElementById('canvas');
-
         zoomRange.addEventListener('input', (e) => {
             canvas.style.transform = `scale(${e.target.value})`;
         });
