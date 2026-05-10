@@ -18,44 +18,46 @@
             transform-origin: center center; padding: 800px; 
         }
 
-        /* LIBRO ABIERTO: 2 x A3 Horizontales = 2828px x 1000px */
-        #flipbook { 
-            width: 2828px !important; 
-            height: 1000px !important; 
-            background: transparent; 
-        }
-
-        /* CADA PÁGINA: A3 Horizontal individual */
-        .page { 
-            background: white; 
-            width: 1414px !important; 
-            height: 1000px !important; 
-        }
-
-        .page img { 
-            width: 100% !important; 
-            height: 100% !important; 
-            object-fit: fill !important; 
-        }
-        
+        #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
+        .page { background: white; width: 1414px !important; height: 1000px !important; }
+        .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        .zoom-bar { 
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999; 
-            background: rgba(30,30,30,0.95); padding: 12px 25px; border-radius: 50px; 
-            border: 1px solid #444; display: flex; align-items: center; gap: 15px; backdrop-filter: blur(10px); 
+        /* CONTROLES COMBINADOS */
+        .controls-wrapper {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
+            display: flex; flex-direction: column; gap: 10px; align-items: center;
         }
-        #zoomRange { width: 180px; accent-color: #fff; cursor: pointer; }
-        .zoom-bar span { color: white; font-family: sans-serif; font-size: 10px; font-weight: bold; letter-spacing: 2px; }
+
+        .control-panel { 
+            background: rgba(25,25,25,0.9); padding: 10px 25px; border-radius: 50px; 
+            border: 1px solid #333; display: flex; align-items: center; gap: 15px; 
+            backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        input[type="range"] { width: 180px; accent-color: #fff; cursor: pointer; opacity: 0.8; transition: opacity 0.3s; }
+        input[type="range"]:hover { opacity: 1; }
+        
+        .label { color: white; font-family: sans-serif; font-size: 9px; font-weight: bold; letter-spacing: 2px; min-width: 50px; }
+        .page-num { color: #888; font-family: monospace; font-size: 11px; min-width: 40px; text-align: right; }
     </style>
 </head>
 <body>
     <div id="viewport">
         <div id="canvas"><div id="flipbook"></div></div>
     </div>
-    <div class="zoom-bar">
-        <span>ZOOM</span>
-        <input type="range" id="zoomRange" step="0.01">
+
+    <div class="controls-wrapper">
+        <div class="control-panel">
+            <span class="label">PÁGINA</span>
+            <input type="range" id="pageRange" min="0" max="43" value="0">
+            <span class="page-num" id="pageDisplay">1 / 44</span>
+        </div>
+
+        <div class="control-panel">
+            <span class="label">ZOOM</span>
+            <input type="range" id="zoomRange" step="0.01">
+        </div>
     </div>
 
     <script>
@@ -64,14 +66,8 @@
         let initialScale = 1;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 1414, // Ancho A3 Horizontal
-            height: 1000, // Alto A3 Horizontal
-            size: 'fixed', 
-            showCover: true, 
-            usePortrait: false, 
-            drawShadow: false,
-            flippingTime: 1000,
-            startPage: 0
+            width: 1414, height: 1000, size: 'fixed', 
+            showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0
         });
 
         function loadImages() {
@@ -86,17 +82,30 @@
             pageFlip.loadFromHTML(pages);
         }
 
+        // LÓGICA DE NAVEGACIÓN
+        const pageRange = document.getElementById('pageRange');
+        const pageDisplay = document.getElementById('pageDisplay');
+
+        pageRange.addEventListener('input', (e) => {
+            const pageIdx = parseInt(e.target.value);
+            pageFlip.turnToPage(pageIdx);
+        });
+
+        // Actualizar la barra cuando el usuario pase páginas a mano
+        pageFlip.on('flip', (e) => {
+            const currentPage = e.data + 1;
+            pageRange.value = e.data;
+            pageDisplay.innerText = `${currentPage} / ${totalPaginas}`;
+        });
+
+        // LÓGICA DE ZOOM (La que ya teníamos perfecta)
         function initZoom() {
-            // Ajustamos el zoom inicial para que la PORTADA (que es un A3 Horizontal) quepa entera
-            // Dejamos margen lateral generoso (0.7 del ancho de pantalla)
             const scaleW = (window.innerWidth * 0.7) / 1414;
             const scaleH = (window.innerHeight * 0.7) / 1000;
-            
             initialScale = Math.min(scaleW, scaleH);
             
             const zoomRange = document.getElementById('zoomRange');
             const canvas = document.getElementById('canvas');
-
             zoomRange.min = initialScale;
             zoomRange.max = 2.0; 
             zoomRange.value = initialScale;
@@ -111,7 +120,6 @@
             const scale = parseFloat(e.target.value);
             const canvas = document.getElementById('canvas');
             const viewport = document.getElementById('viewport');
-            
             canvas.style.transform = `scale(${scale})`;
             
             if (scale > initialScale + 0.05) {
