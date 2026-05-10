@@ -12,7 +12,6 @@
             font-family: 'Constantia', serif; 
         }
         
-        /* Viewport limpio, sin scroll de inicio */
         #viewport { 
             flex: 1; width: 100vw; height: 100vh; 
             overflow: hidden; 
@@ -20,13 +19,11 @@
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* El canvas flota en el centro */
         #canvas { 
             display: block; 
             transition: transform 0.2s ease-out; 
             transform-origin: center center;
             will-change: transform;
-            z-index: 1;
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
@@ -34,42 +31,43 @@
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        /* INTERFAZ CONSTANTIA */
+        /* INTERFAZ ÚNICA */
         .ui-wrapper {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
             width: 90%; max-width: 500px;
         }
 
         .control-bar { 
-            background: rgba(20, 20, 20, 0.85); 
+            background: rgba(20, 20, 20, 0.9); 
             padding: 12px 25px; border-radius: 50px; 
             border: 1px solid #333; 
             display: flex; align-items: center; justify-content: space-between; 
-            gap: 20px; backdrop-filter: blur(15px); 
+            gap: 15px; backdrop-filter: blur(15px); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .label, .page-counter { 
-            color: white; font-size: 11px; letter-spacing: 2px; 
-            text-transform: uppercase; white-space: nowrap; font-family: 'Constantia', serif;
+            color: white; font-size: 10px; letter-spacing: 2px; 
+            text-transform: uppercase; white-space: nowrap; 
         }
 
-        .page-counter { color: #888; min-width: 80px; text-align: right; }
+        .page-counter { color: #888; text-align: right; min-width: 65px; }
 
-        #zoomRange { 
-            flex: 1; accent-color: #fff; cursor: pointer; height: 2px; 
-        }
+        #zoomRange { flex: 1; accent-color: #fff; cursor: pointer; height: 2px; }
 
+        /* AJUSTES ESPECÍFICOS PARA MÓVIL */
         @media (max-width: 768px) {
-            .ui-wrapper { width: 95%; bottom: 20px; }
-            .control-bar { padding: 10px 18px; gap: 10px; }
+            .ui-wrapper { width: 92%; bottom: 20px; }
+            .control-bar { padding: 8px 18px; gap: 10px; }
+            .label, .page-counter { font-size: 9px; letter-spacing: 1px; }
+            /* Permitimos que el canvas tenga un pequeño margen para no tocar los bordes */
+            #canvas { margin: 10px; }
         }
     </style>
 </head>
 <body>
     <div id="viewport">
-        <div id="canvas">
-            <div id="flipbook"></div>
-        </div>
+        <div id="canvas"><div id="flipbook"></div></div>
     </div>
 
     <div class="ui-wrapper">
@@ -87,7 +85,8 @@
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 1414, height: 1000, size: 'fixed', 
-            showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0
+            showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0,
+            mobileScrollSupport: false // Gestionamos el scroll nosotros con el zoom
         });
 
         function loadImages() {
@@ -108,7 +107,7 @@
 
         function initZoom() {
             const isMobile = window.innerWidth <= 768;
-            // Desktop: 0.65 (márgenes amplios) | Móvil: 0.95 (casi pantalla completa)
+            // En móvil usamos el 95% del ancho para aprovechar la pantalla
             const marginFactor = isMobile ? 0.95 : 0.65;
             
             const scaleW = (window.innerWidth * marginFactor) / 1414;
@@ -118,15 +117,16 @@
             
             const zoomRange = document.getElementById('zoomRange');
             const canvas = document.getElementById('canvas');
+            const vp = document.getElementById('viewport');
 
             zoomRange.min = initialScale;
-            zoomRange.max = isMobile ? 3.5 : 2.5; 
+            // En móvil permitimos mucho más zoom (4x)
+            zoomRange.max = isMobile ? 4.0 : 2.5; 
             zoomRange.value = initialScale;
             
-            // Forzamos el centrado eliminando cualquier scroll residual
-            const vp = document.getElementById('viewport');
-            vp.overflow = 'hidden';
             canvas.style.transform = `scale(${initialScale})`;
+            vp.style.overflow = 'hidden';
+            vp.scrollTo(0, 0);
         }
 
         loadImages();
@@ -140,11 +140,8 @@
             
             canvas.style.transform = `scale(${scale})`;
             
-            // Solo activamos scroll si el usuario aumenta el zoom significativamente
-            if (scale > initialScale + 0.05) {
+            if (scale > initialScale + 0.02) {
                 vp.style.overflow = 'auto';
-                // Cambiamos el origen a top-left para que el scroll funcione de forma natural
-                canvas.style.transformOrigin = 'center center'; 
             } else {
                 vp.style.overflow = 'hidden';
                 vp.scrollTo(0, 0);
