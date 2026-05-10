@@ -6,7 +6,7 @@
     <title>Portfolio | Gaizka García</title>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
-        body { margin: 0; background: #111; overflow: hidden; height: 100vh; display: flex; flex-direction: column; font-family: 'Helvetica', sans-serif; }
+        body { margin: 0; background: #111; overflow: hidden; height: 100vh; display: flex; flex-direction: column; font-family: sans-serif; }
         
         #viewport { 
             flex: 1; width: 100vw; overflow: hidden; 
@@ -15,39 +15,40 @@
 
         #canvas { 
             display: block; transition: transform 0.2s ease-out; 
-            transform-origin: center center; padding: 200px; 
+            transform-origin: center center; padding: 600px; 
         }
 
+        /* LIBRO ABIERTO: 2 x A3 Horizontales */
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
-        .page { background: white; width: 1414px !important; height: 1000px !important; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+        /* CADA PÁGINA: A3 Horizontal individual */
+        .page { background: white; width: 1414px !important; height: 1000px !important; }
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        /* INTERFAZ ULTRA MINIMALISTA */
-        .ui-container {
+        /* INTERFAZ MINIMALISTA */
+        .controls-container {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
         }
 
         .bookmark {
-            color: #888; font-size: 10px; font-weight: 300; letter-spacing: 3px;
-            text-transform: uppercase; transition: color 0.3s;
+            color: #888; font-size: 10px; font-weight: bold; letter-spacing: 2px;
+            text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        .zoom-panel { 
-            background: rgba(20,20,20,0.8); padding: 8px 22px; border-radius: 50px; 
-            border: 1px solid #333; display: flex; align-items: center; gap: 15px; 
-            backdrop-filter: blur(10px);
+        .zoom-bar { 
+            background: rgba(30,30,30,0.9); padding: 10px 25px; border-radius: 50px; 
+            border: 1px solid #444; display: flex; align-items: center; gap: 15px; backdrop-filter: blur(10px); 
         }
+        #zoomRange { width: 180px; accent-color: #fff; cursor: pointer; }
+        .zoom-bar span { color: white; font-size: 10px; font-weight: bold; letter-spacing: 2px; }
 
-        input[type="range"] { width: 150px; accent-color: #fff; cursor: pointer; height: 2px; }
-        .label { color: #fff; font-size: 8px; font-weight: bold; letter-spacing: 2px; }
-
+        /* Ajustes para móvil */
         @media (max-width: 768px) {
-            #canvas { padding: 40px; }
-            .zoom-panel { padding: 6px 18px; }
-            input[type="range"] { width: 100px; }
+            #canvas { padding: 100px; }
+            #zoomRange { width: 120px; }
         }
     </style>
 </head>
@@ -56,11 +57,11 @@
         <div id="canvas"><div id="flipbook"></div></div>
     </div>
 
-    <div class="ui-container">
+    <div class="controls-container">
         <div class="bookmark" id="pageDisplay">PAG. 1 / 44</div>
         
-        <div class="zoom-panel">
-            <span class="label">ZOOM</span>
+        <div class="zoom-bar">
+            <span>ZOOM</span>
             <input type="range" id="zoomRange" step="0.01">
         </div>
     </div>
@@ -69,11 +70,16 @@
         const totalPaginas = 44;
         const carpeta = 'paginas/';
         let initialScale = 1;
-        const isMobile = window.innerWidth <= 768;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 1414, height: 1000, size: 'fixed', 
-            showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0
+            width: 1414, // Ancho A3 Horizontal
+            height: 1000, // Alto A3 Horizontal
+            size: 'fixed', 
+            showCover: true, 
+            usePortrait: false, 
+            drawShadow: false,
+            flippingTime: 1000,
+            startPage: 0
         });
 
         function loadImages() {
@@ -88,21 +94,25 @@
             pageFlip.loadFromHTML(pages);
         }
 
-        // Actualizar el marcapáginas
+        // Lógica del marcapáginas: Actualiza el texto al pasar página
         pageFlip.on('flip', (e) => {
             document.getElementById('pageDisplay').innerText = `PAG. ${e.data + 1} / ${totalPaginas}`;
         });
 
         function initZoom() {
-            const marginFactor = isMobile ? 0.95 : 0.75;
+            const isMobile = window.innerWidth <= 768;
+            const marginFactor = isMobile ? 0.9 : 0.7;
+            
             const scaleW = (window.innerWidth * marginFactor) / 1414;
             const scaleH = (window.innerHeight * marginFactor) / 1000;
+            
             initialScale = Math.min(scaleW, scaleH);
             
             const zoomRange = document.getElementById('zoomRange');
             const canvas = document.getElementById('canvas');
+
             zoomRange.min = initialScale;
-            zoomRange.max = isMobile ? 3.5 : 2.5; 
+            zoomRange.max = isMobile ? 3.0 : 2.0; 
             zoomRange.value = initialScale;
             canvas.style.transform = `scale(${initialScale})`;
         }
@@ -115,6 +125,7 @@
             const scale = parseFloat(e.target.value);
             const canvas = document.getElementById('canvas');
             const viewport = document.getElementById('viewport');
+            
             canvas.style.transform = `scale(${scale})`;
             
             if (scale > initialScale + 0.05) {
@@ -129,7 +140,7 @@
             }
         });
 
-        // Extra: Flechas del teclado para navegación rápida sin estorbos visuales
+        // Navegación con flechas del teclado (Extra para PC)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight') pageFlip.flipNext();
             if (e.key === 'ArrowLeft') pageFlip.flipPrev();
