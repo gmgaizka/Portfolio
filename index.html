@@ -15,27 +15,27 @@
 
         #canvas { 
             display: block; transition: transform 0.2s ease-out; 
-            transform-origin: center center; padding: 500px; 
+            transform-origin: center center; padding: 600px; 
         }
 
-        /* FORZAMOS PROPORCIÓN A3 POR CSS */
+        /* El contenedor total (Libro abierto = 2 hojas A3) */
         #flipbook { 
             width: 1414px !important; 
             height: 1000px !important; 
             background: transparent; 
         }
 
+        /* Cada hoja individual es un A3 vertical */
         .page { 
             background: white; 
-            width: 707px !important; /* Mitad del total */
+            width: 707px !important; 
             height: 1000px !important; 
-            overflow: hidden;
         }
 
         .page img { 
             width: 100% !important; 
             height: 100% !important; 
-            object-fit: fill !important; /* Obliga a la imagen a llenar el A3 */
+            object-fit: fill !important; 
         }
         
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
@@ -64,15 +64,14 @@
         let initialScale = 1;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 707, 
-            height: 1000,
+            width: 707, // Ancho de una hoja A3
+            height: 1000, // Alto de una hoja A3
             size: 'fixed', 
             showCover: true, 
             usePortrait: false, 
             drawShadow: false,
             flippingTime: 1000,
-            startPage: 0,
-            mobileScrollSupport: false
+            startPage: 0
         });
 
         function loadImages() {
@@ -88,9 +87,9 @@
         }
 
         function initZoom() {
-            // Ajustamos el zoom inicial para que la portada A3 (vertical) quepa con margen
+            // Ajuste para que la portada (A3 vertical) se vea entera con margen
             const scaleW = (window.innerWidth * 0.4) / 707;
-            const scaleH = (window.innerHeight * 0.75) / 1000;
+            const scaleH = (window.innerHeight * 0.8) / 1000;
             
             initialScale = Math.min(scaleW, scaleH);
             
@@ -98,7 +97,7 @@
             const canvas = document.getElementById('canvas');
 
             zoomRange.min = initialScale;
-            zoomRange.max = 2.0; 
+            zoomRange.max = 2.5; // Más rango de zoom
             zoomRange.value = initialScale;
             canvas.style.transform = `scale(${initialScale})`;
         }
