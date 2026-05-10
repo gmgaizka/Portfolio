@@ -6,7 +6,7 @@
     <title>Portfolio | Gaizka García</title>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
-        body { margin: 0; background: #111; overflow: hidden; height: 100vh; display: flex; flex-direction: column; font-family: sans-serif; }
+        body { margin: 0; background: #111; overflow: hidden; height: 100vh; display: flex; flex-direction: column; font-family: 'Helvetica', sans-serif; }
         
         #viewport { 
             flex: 1; width: 100vw; overflow: hidden; 
@@ -15,38 +15,39 @@
 
         #canvas { 
             display: block; transition: transform 0.2s ease-out; 
-            transform-origin: center center; padding: 100px; /* Reducido para móvil */
+            transform-origin: center center; padding: 200px; 
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
-        .page { background: white; width: 1414px !important; height: 1000px !important; }
+        .page { background: white; width: 1414px !important; height: 1000px !important; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
+        
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        /* CONTROLES ADAPTATIVOS */
-        .controls-wrapper {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;
-            display: flex; flex-direction: column; gap: 8px; align-items: center; width: 90%; max-width: 400px;
+        /* INTERFAZ ULTRA MINIMALISTA */
+        .ui-container {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
         }
 
-        .control-panel { 
-            background: rgba(25,25,25,0.85); padding: 8px 20px; border-radius: 50px; 
-            border: 1px solid #333; display: flex; align-items: center; gap: 12px; 
-            backdrop-filter: blur(10px); width: 100%; box-sizing: border-box;
+        .bookmark {
+            color: #888; font-size: 10px; font-weight: 300; letter-spacing: 3px;
+            text-transform: uppercase; transition: color 0.3s;
         }
 
-        input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 4px; }
-        
-        .label { color: white; font-size: 8px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; min-width: 45px; }
-        .page-num { color: #bbb; font-family: monospace; font-size: 10px; min-width: 45px; text-align: right; }
+        .zoom-panel { 
+            background: rgba(20,20,20,0.8); padding: 8px 22px; border-radius: 50px; 
+            border: 1px solid #333; display: flex; align-items: center; gap: 15px; 
+            backdrop-filter: blur(10px);
+        }
 
-        /* AJUSTES ESPECÍFICOS PARA MÓVIL */
+        input[type="range"] { width: 150px; accent-color: #fff; cursor: pointer; height: 2px; }
+        .label { color: #fff; font-size: 8px; font-weight: bold; letter-spacing: 2px; }
+
         @media (max-width: 768px) {
-            #canvas { padding: 50px; } /* Menos aire para maximizar el libro */
-            .controls-wrapper { bottom: 15px; gap: 6px; }
-            .control-panel { padding: 6px 15px; }
-            .label { font-size: 7px; min-width: 35px; }
-            .page-num { font-size: 9px; }
+            #canvas { padding: 40px; }
+            .zoom-panel { padding: 6px 18px; }
+            input[type="range"] { width: 100px; }
         }
     </style>
 </head>
@@ -55,13 +56,10 @@
         <div id="canvas"><div id="flipbook"></div></div>
     </div>
 
-    <div class="controls-wrapper">
-        <div class="control-panel">
-            <span class="label">PÁGINA</span>
-            <input type="range" id="pageRange" min="0" max="43" value="0">
-            <span class="page-num" id="pageDisplay">1 / 44</span>
-        </div>
-        <div class="control-panel">
+    <div class="ui-container">
+        <div class="bookmark" id="pageDisplay">PAG. 1 / 44</div>
+        
+        <div class="zoom-panel">
             <span class="label">ZOOM</span>
             <input type="range" id="zoomRange" step="0.01">
         </div>
@@ -71,18 +69,11 @@
         const totalPaginas = 44;
         const carpeta = 'paginas/';
         let initialScale = 1;
-
-        // Detectar si es móvil para ajustar el modo de vista inicial
         const isMobile = window.innerWidth <= 768;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 1414, height: 1000, size: 'fixed', 
-            showCover: true, 
-            usePortrait: isMobile, // En móvil forzamos vista de una sola página si el usuario lo prefiere
-            flippingTime: 800, 
-            startPage: 0,
-            clickEventForward: false,
-            useMouseEvents: true
+            showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0
         });
 
         function loadImages() {
@@ -97,39 +88,28 @@
             pageFlip.loadFromHTML(pages);
         }
 
-        const pageRange = document.getElementById('pageRange');
-        const pageDisplay = document.getElementById('pageDisplay');
-
-        pageRange.addEventListener('input', (e) => pageFlip.turnToPage(parseInt(e.target.value)));
-
+        // Actualizar el marcapáginas
         pageFlip.on('flip', (e) => {
-            pageRange.value = e.data;
-            pageDisplay.innerText = `${e.data + 1} / ${totalPaginas}`;
+            document.getElementById('pageDisplay').innerText = `PAG. ${e.data + 1} / ${totalPaginas}`;
         });
 
         function initZoom() {
-            // Ajuste de escala más inteligente para móviles (ocupa el 90% del ancho)
-            const marginFactor = isMobile ? 0.9 : 0.7;
+            const marginFactor = isMobile ? 0.95 : 0.75;
             const scaleW = (window.innerWidth * marginFactor) / 1414;
             const scaleH = (window.innerHeight * marginFactor) / 1000;
-            
             initialScale = Math.min(scaleW, scaleH);
             
             const zoomRange = document.getElementById('zoomRange');
             const canvas = document.getElementById('canvas');
-            
             zoomRange.min = initialScale;
-            zoomRange.max = isMobile ? 3.0 : 2.0; // Más zoom en móvil para leer textos pequeños
+            zoomRange.max = isMobile ? 3.5 : 2.5; 
             zoomRange.value = initialScale;
             canvas.style.transform = `scale(${initialScale})`;
         }
 
         loadImages();
         window.onload = initZoom;
-        window.onresize = () => {
-            initZoom();
-            // No recargamos para no perder la página actual, solo reajustamos zoom
-        };
+        window.onresize = initZoom;
 
         document.getElementById('zoomRange').addEventListener('input', (e) => {
             const scale = parseFloat(e.target.value);
@@ -137,7 +117,7 @@
             const viewport = document.getElementById('viewport');
             canvas.style.transform = `scale(${scale})`;
             
-            if (scale > initialScale + 0.02) {
+            if (scale > initialScale + 0.05) {
                 viewport.style.overflow = 'auto';
                 viewport.style.alignItems = 'flex-start';
                 viewport.style.justifyContent = 'flex-start';
@@ -147,6 +127,12 @@
                 viewport.style.justifyContent = 'center';
                 viewport.scrollTo(0,0);
             }
+        });
+
+        // Extra: Flechas del teclado para navegación rápida sin estorbos visuales
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') pageFlip.flipNext();
+            if (e.key === 'ArrowLeft') pageFlip.flipPrev();
         });
     </script>
 </body>
