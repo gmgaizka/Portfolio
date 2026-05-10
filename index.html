@@ -7,9 +7,32 @@
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
         body { margin: 0; background: #111; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        #viewport { flex: 1; width: 100vw; overflow: auto; display: flex; justify-content: center; align-items: center; }
-        #canvas { display: block; transition: transform 0.2s ease-out; transform-origin: center center; padding: 200px; }
-        #flipbook { width: 1414px !important; height: 1000px !important; background: white; box-shadow: 0 0 50px rgba(0,0,0,0.6); }
+        
+        /* El viewport NO tendrá barras de scroll por defecto */
+        #viewport { 
+            flex: 1; 
+            width: 100vw; 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        #canvas { 
+            display: block; 
+            transition: transform 0.2s ease-out; 
+            transform-origin: center center; 
+            /* El padding aquí crea el área de navegación extra cuando hay zoom */
+            padding: 500px; 
+        }
+
+        #flipbook { 
+            width: 1414px !important; 
+            height: 1000px !important; 
+            background: white; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.6); 
+        }
+
         .page { background: white; width: 100%; height: 100%; }
         .page img { width: 100%; height: 100%; object-fit: fill; }
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
@@ -35,7 +58,7 @@
     <script>
         const totalPaginas = 44;
         const carpeta = 'paginas/';
-        let minScale = 1;
+        let initialScale = 1;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 1414, height: 1000, size: 'fixed', showCover: true, 
@@ -54,39 +77,44 @@
             pageFlip.loadFromHTML(pages);
         }
 
-        function updateZoom() {
-            // Calculamos qué escala necesita el libro para verse completo
-            // Miramos el ancho de la ventana y lo dividimos por el ancho del libro (con margen)
-            const availableWidth = window.innerWidth * 0.9;
-            const availableHeight = window.innerHeight * 0.8;
+        function initZoom() {
+            // Calculamos la escala para que el libro ocupe solo el 75% de la pantalla
+            // Esto garantiza márgenes visibles a los lados
+            const scaleW = (window.innerWidth * 0.75) / 1414;
+            const scaleH = (window.innerHeight * 0.75) / 1000;
             
-            minScale = Math.min(availableWidth / 1414, availableHeight / 1000);
+            initialScale = Math.min(scaleW, scaleH);
             
             const zoomRange = document.getElementById('zoomRange');
             const canvas = document.getElementById('canvas');
 
-            zoomRange.min = minScale;
-            zoomRange.max = 1.5; // El máximo sigue siendo 150%
-            zoomRange.value = minScale; // Empezamos en el mínimo
-            canvas.style.transform = `scale(${minScale})`;
+            zoomRange.min = initialScale;
+            zoomRange.max = 1.5; 
+            zoomRange.value = initialScale;
+            canvas.style.transform = `scale(${initialScale})`;
         }
 
         loadImages();
-        window.onload = updateZoom;
-        window.onresize = updateZoom; // Si cambias el tamaño de la ventana, se ajusta solo
+        window.onload = initZoom;
+        window.onresize = initZoom;
 
         document.getElementById('zoomRange').addEventListener('input', (e) => {
-            const scale = e.target.value;
+            const scale = parseFloat(e.target.value);
             const canvas = document.getElementById('canvas');
             const viewport = document.getElementById('viewport');
+            
             canvas.style.transform = `scale(${scale})`;
             
-            if (scale > minScale * 1.1) {
+            // ACTIVACIÓN DE BARRAS: Solo si el zoom es mayor que el inicial
+            if (scale > initialScale + 0.05) {
+                viewport.style.overflow = 'auto';
                 viewport.style.alignItems = 'flex-start';
                 viewport.style.justifyContent = 'flex-start';
             } else {
+                viewport.style.overflow = 'hidden';
                 viewport.style.alignItems = 'center';
                 viewport.style.justifyContent = 'center';
+                viewport.scrollTo(0,0);
             }
         });
     </script>
