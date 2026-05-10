@@ -11,39 +11,42 @@
             background: #111; 
             display: flex; 
             flex-direction: column;
-            justify-content: center; 
             align-items: center; 
+            justify-content: center;
             height: 100vh; 
             overflow: hidden; 
         }
 
-        /* El contenedor de zoom ahora es mucho más libre */
         #zoom-container {
             width: 100vw;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: auto;
+            overflow: auto; /* Permite moverte cuando el zoom es grande */
         }
 
         #flipbook-wrapper {
             transition: transform 0.2s ease-out;
             transform-origin: center center;
-            padding: 50px; /* Espacio para que al rotar las páginas no se corten */
+            /* Forzamos que el contenedor sea grande de base */
+            padding: 100px; 
         }
 
-        /* LIBRO GRANDE: Ajustado para que ocupe el 90% del ancho de la pantalla */
+        /* TAMAÑO DEL LIBRO: Lo ponemos en píxeles para que NO sea pequeño */
         #flipbook { 
-            width: 90vw; 
-            height: calc(90vw * 0.707); /* Mantiene la proporción A3 */
-            max-height: 85vh; /* Pero que no se pase de alto */
+            width: 1414px; 
+            height: 1000px; 
+            /* Si la pantalla es pequeña, se ajustará, pero con el zoom crecerá */
+            max-width: 95vw;
+            max-height: 85vh;
         }
 
         .page { 
             background: white; 
             width: 100%; 
             height: 100%; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
 
         .page img { 
@@ -54,19 +57,20 @@
 
         .controls {
             position: fixed;
-            bottom: 25px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 30px;
+            bottom: 30px;
+            background: rgba(30, 30, 30, 0.9);
+            padding: 12px 30px;
             border-radius: 50px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
             z-index: 1000;
             border: 1px solid #444;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         #zoom-slider {
-            width: 150px;
+            width: 200px;
             cursor: pointer;
             accent-color: #fff;
         }
@@ -75,6 +79,7 @@
             color: white;
             font-family: sans-serif;
             font-size: 12px;
+            font-weight: bold;
             letter-spacing: 2px;
         }
     </style>
@@ -89,7 +94,7 @@
 
     <div class="controls">
         <span>ZOOM</span>
-        <input type="range" id="zoom-slider" min="1" max="3" step="0.1" value="1">
+        <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1">
     </div>
 
     <script>
@@ -100,10 +105,8 @@
             width: 1414, 
             height: 1000, 
             size: 'stretch',
-            
-            showCover: true, // La primera página es la portada
-            usePortrait: false, // ¡IMPORTANTE! False para que se abra como un libro de dos páginas
-            
+            showCover: true, 
+            usePortrait: false, // Muestra dos páginas abiertas (doble A3)
             maxShadowOpacity: 0, 
             mobileScrollSupport: true,
             autoSize: true,
@@ -128,7 +131,15 @@
         const wrapper = document.getElementById('flipbook-wrapper');
 
         slider.addEventListener('input', (e) => {
-            wrapper.style.transform = `scale(${e.target.value})`;
+            const val = e.target.value;
+            wrapper.style.transform = `scale(${val})`;
+            
+            // Si hay mucho zoom, dejamos que el usuario haga scroll infinito
+            if(val > 1.5) {
+                wrapper.style.padding = "500px";
+            } else {
+                wrapper.style.padding = "100px";
+            }
         });
     </script>
 </body>
