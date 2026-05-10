@@ -9,31 +9,25 @@
         body { margin: 0; background: #111; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
         #viewport { 
-            flex: 1; 
-            width: 100vw; 
-            overflow: hidden; /* Empezamos sin scroll */
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
+            flex: 1; width: 100vw; overflow: hidden; 
+            display: flex; justify-content: center; align-items: center; 
         }
 
         #canvas { 
-            display: block; 
-            transition: transform 0.2s ease-out; 
-            transform-origin: center center; 
-            /* Espacio extra de navegación cuando hay zoom */
-            padding: 500px; 
+            display: block; transition: transform 0.2s ease-out; 
+            transform-origin: center center; padding: 500px; 
         }
 
+        /* Ajuste de color de fondo para que no se vea el lienzo blanco tras la portada */
         #flipbook { 
-            width: 1414px !important; 
-            height: 1000px !important; 
-            background: white; 
-            box-shadow: 0 0 50px rgba(0,0,0,0.6); 
+            width: 1414px !important; height: 1000px !important; 
+            background: transparent; 
         }
 
-        .page { background: white; width: 100%; height: 100%; }
+        .page { background: white; width: 100%; height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .page img { width: 100%; height: 100%; object-fit: fill; }
+        
+        /* Eliminamos rastro de sombras automáticas */
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
         .zoom-bar { 
@@ -59,16 +53,20 @@
         const carpeta = 'paginas/';
         let initialScale = 1;
 
+        // Configuramos la instancia
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 1414, height: 1000, size: 'fixed', 
-            
-            // LA CLAVE PARA LA PORTADA INDIVIDUAL:
-            showCover: true, 
-            usePortrait: false, 
+            width: 707, // Ancho de UNA página (1414 / 2)
+            height: 1000,
+            size: 'fixed',
+            showCover: true, // Esto hace que la pag 1 sea individual
+            usePortrait: false,
+            drawShadow: false,
+            flippingTime: 1000,
             startPage: 0,
-            
-            drawShadow: false, flippingTime: 1000,
-            autoSize: true, // Importante para que detecte bien el primer render
+            minWidth: 707,
+            maxWidth: 1414,
+            minHeight: 1000,
+            maxHeight: 1000
         });
 
         function loadImages() {
@@ -76,7 +74,6 @@
             for (let i = 1; i <= totalPaginas; i++) {
                 const div = document.createElement('div');
                 div.className = 'page';
-                // Usamos Portfolio.jpg para la 1 y Portfolio2.jpg en adelante
                 let nombreArchivo = (i === 1) ? 'Portfolio.jpg' : 'Portfolio' + i + '.jpg';
                 div.innerHTML = `<img src="${carpeta}${nombreArchivo}" alt="Pág ${i}">`;
                 pages.push(div);
@@ -85,9 +82,9 @@
         }
 
         function initZoom() {
-            // AJUSTE GIGANTE DE MÁRGENES: Calculamos al 60% de la pantalla (aire del 40%)
-            const scaleW = (window.innerWidth * 0.6) / 1414;
-            const scaleH = (window.innerHeight * 0.6) / 1000;
+            // Calculamos sobre el ancho total (1414) para que quepan las dos páginas al abrirse
+            const scaleW = (window.innerWidth * 0.65) / 1414;
+            const scaleH = (window.innerHeight * 0.75) / 1000;
             
             initialScale = Math.min(scaleW, scaleH);
             
@@ -111,7 +108,6 @@
             
             canvas.style.transform = `scale(${scale})`;
             
-            // ACTIVACIÓN DE BARRAS: Solo si el zoom es mayor que el inicial
             if (scale > initialScale + 0.05) {
                 viewport.style.overflow = 'auto';
                 viewport.style.alignItems = 'flex-start';
@@ -120,7 +116,7 @@
                 viewport.style.overflow = 'hidden';
                 viewport.style.alignItems = 'center';
                 viewport.style.justifyContent = 'center';
-                viewport.scrollTo(0,0); // Volvemos a centrar al volver al mínimo
+                viewport.scrollTo(0,0);
             }
         });
     </script>
