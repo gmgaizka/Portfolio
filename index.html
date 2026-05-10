@@ -7,25 +7,17 @@
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
         body { margin: 0; background: #111; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        
         #viewport { width: 100vw; height: 100vh; overflow: auto; display: flex; justify-content: center; align-items: center; }
-        
         #canvas { transition: transform 0.1s ease; transform-origin: center center; padding: 100px; }
-
-        #flipbook { 
-            width: 1414px !important; 
-            height: 1000px !important;
-            background: white; /* Asegura que el fondo del libro sea blanco puro */
-        }
-
-        .page { background: white; width: 100%; height: 100%; }
+        
+        /* Tamaño A3 Horizontal Fijo */
+        #flipbook { width: 1414px !important; height: 1000px !important; }
+        
+        .page { background: white; width: 100%; height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .page img { width: 100%; height: 100%; object-fit: fill; }
 
-        /* ELIMINACIÓN RADICAL DE CUALQUIER SOMBRA INTERNA */
-        canvas, .st-page-shadow { 
-            display: none !important; 
-            opacity: 0 !important; 
-        }
+        /* Eliminación por CSS de cualquier residuo de sombra */
+        .st-page-shadow, canvas { display: none !important; opacity: 0 !important; }
 
         .zoom-bar { position: fixed; bottom: 30px; z-index: 9999; background: rgba(20,20,20,0.95); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; display: flex; align-items: center; gap: 20px; }
         #zoomRange { width: 200px; accent-color: #fff; cursor: pointer; }
@@ -53,12 +45,12 @@
             width: 1414,
             height: 1000,
             size: 'fixed',
-            showCover: true,
-            usePortrait: false,
+            showCover: false, // Al ser horizontal y una sola página, mejor desactivar la portada separada
             
-            // ESTO MATA LA SOMBRA CENTRAL
+            // LA CLAVE: Forzamos Portrait para que no intente unir dos páginas y crear el lomo
+            usePortrait: true, 
             drawShadow: false, 
-            maxShadowOpacity: 0, 
+            maxShadowOpacity: 0,
             showShadows: false,
             
             flippingTime: 800,
@@ -79,19 +71,17 @@
 
         loadImages();
 
-        // Lógica de Zoom
         const zoomRange = document.getElementById('zoomRange');
         const canvas = document.getElementById('canvas');
         zoomRange.addEventListener('input', (e) => {
             canvas.style.transform = `scale(${e.target.value})`;
         });
 
-        // Al cargar, ajustamos para que se vea grande pero quepa
         window.onload = () => {
-            const initialScale = (window.innerWidth * 0.85) / 2828; 
-            const val = Math.min(Math.max(initialScale, 0.3), 0.7);
-            zoomRange.value = val;
-            canvas.style.transform = `scale(${val})`;
+            // Ajuste para que se vea una página grande centrada
+            const initialScale = (window.innerHeight * 0.8) / 1000;
+            zoomRange.value = initialScale;
+            canvas.style.transform = `scale(${initialScale})`;
         };
     </script>
 </body>
