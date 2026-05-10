@@ -17,7 +17,7 @@
 
     <script>
         const totalPaginas = 44; 
-        const carpeta = 'paginas/';
+        const carpeta = 'paginas/'; 
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 900,
@@ -34,9 +34,11 @@
                 const div = document.createElement('div');
                 div.className = 'page';
                 
-                let nombreArchivo = (i === 1) ? 'Portfolio.jpg' : `Portfolio${i}.jpg`;
+                // AQUÍ ESTABA EL FALLO: Ahora busca Portfolio.jpg, Portfolio2.jpg, Portfolio3.jpg...
+                // Siempre con la "P" mayúscula tal cual están en tu carpeta.
+                let nombreArchivo = (i === 1) ? 'Portfolio.jpg' : 'Portfolio' + i + '.jpg';
                 
-                div.innerHTML = `<img src="${carpeta}${nombreArchivo}" alt="Página ${i}">`;
+                div.innerHTML = '<img src="' + carpeta + nombreArchivo + '" alt="Página ' + i + '">';
                 pages.push(div);
             }
             pageFlip.loadFromHTML(pages);
