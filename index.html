@@ -8,11 +8,10 @@
     <style>
         body { margin: 0; background: #111; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* El viewport NO tendrá barras de scroll por defecto */
         #viewport { 
             flex: 1; 
             width: 100vw; 
-            overflow: hidden; 
+            overflow: hidden; /* Empezamos sin scroll */
             display: flex; 
             justify-content: center; 
             align-items: center; 
@@ -22,7 +21,7 @@
             display: block; 
             transition: transform 0.2s ease-out; 
             transform-origin: center center; 
-            /* El padding aquí crea el área de navegación extra cuando hay zoom */
+            /* Espacio extra de navegación cuando hay zoom */
             padding: 500px; 
         }
 
@@ -61,8 +60,15 @@
         let initialScale = 1;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 1414, height: 1000, size: 'fixed', showCover: true, 
-            usePortrait: false, drawShadow: false, flippingTime: 1000
+            width: 1414, height: 1000, size: 'fixed', 
+            
+            // LA CLAVE PARA LA PORTADA INDIVIDUAL:
+            showCover: true, 
+            usePortrait: false, 
+            startPage: 0,
+            
+            drawShadow: false, flippingTime: 1000,
+            autoSize: true, // Importante para que detecte bien el primer render
         });
 
         function loadImages() {
@@ -70,6 +76,7 @@
             for (let i = 1; i <= totalPaginas; i++) {
                 const div = document.createElement('div');
                 div.className = 'page';
+                // Usamos Portfolio.jpg para la 1 y Portfolio2.jpg en adelante
                 let nombreArchivo = (i === 1) ? 'Portfolio.jpg' : 'Portfolio' + i + '.jpg';
                 div.innerHTML = `<img src="${carpeta}${nombreArchivo}" alt="Pág ${i}">`;
                 pages.push(div);
@@ -78,10 +85,9 @@
         }
 
         function initZoom() {
-            // Calculamos la escala para que el libro ocupe solo el 75% de la pantalla
-            // Esto garantiza márgenes visibles a los lados
-            const scaleW = (window.innerWidth * 0.75) / 1414;
-            const scaleH = (window.innerHeight * 0.75) / 1000;
+            // AJUSTE GIGANTE DE MÁRGENES: Calculamos al 60% de la pantalla (aire del 40%)
+            const scaleW = (window.innerWidth * 0.6) / 1414;
+            const scaleH = (window.innerHeight * 0.6) / 1000;
             
             initialScale = Math.min(scaleW, scaleH);
             
@@ -114,7 +120,7 @@
                 viewport.style.overflow = 'hidden';
                 viewport.style.alignItems = 'center';
                 viewport.style.justifyContent = 'center';
-                viewport.scrollTo(0,0);
+                viewport.scrollTo(0,0); // Volvemos a centrar al volver al mínimo
             }
         });
     </script>
