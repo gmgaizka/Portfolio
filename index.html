@@ -12,56 +12,63 @@
             font-family: 'Constantia', serif; 
         }
         
-        /* Contenedor principal: Actúa como ventana */
+        /* Viewport limpio, sin scroll de inicio */
         #viewport { 
             flex: 1; width: 100vw; height: 100vh; 
-            overflow: auto; /* Permite scroll cuando el contenido es grande */
-            display: block; 
-        }
-
-        /* Área de scroll: Un espacio gigante para que el libro siempre tenga "sitio" */
-        #scroll-area {
-            width: 5000px; height: 3000px;
+            overflow: hidden; 
             position: relative;
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* El canvas: donde vive el flipbook */
+        /* El canvas flota en el centro */
         #canvas { 
             display: block; 
+            transition: transform 0.2s ease-out; 
             transform-origin: center center;
             will-change: transform;
+            z-index: 1;
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
         .page { background: white; width: 1414px !important; height: 1000px !important; }
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
-        
-        canvas, .st-page-shadow { display: none !important; }
+        canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        /* INTERFAZ */
+        /* INTERFAZ CONSTANTIA */
         .ui-wrapper {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
             width: 90%; max-width: 500px;
         }
+
         .control-bar { 
-            background: rgba(20, 20, 20, 0.95); padding: 12px 25px; border-radius: 50px; 
-            border: 1px solid #444; display: flex; align-items: center; justify-content: space-between; 
-            gap: 15px; backdrop-filter: blur(15px);
+            background: rgba(20, 20, 20, 0.85); 
+            padding: 12px 25px; border-radius: 50px; 
+            border: 1px solid #333; 
+            display: flex; align-items: center; justify-content: space-between; 
+            gap: 20px; backdrop-filter: blur(15px); 
         }
-        .label, .page-counter { color: white; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
-        .page-counter { color: #888; text-align: right; min-width: 65px; }
-        #zoomRange { flex: 1; accent-color: #fff; cursor: pointer; height: 2px; }
+
+        .label, .page-counter { 
+            color: white; font-size: 11px; letter-spacing: 2px; 
+            text-transform: uppercase; white-space: nowrap; font-family: 'Constantia', serif;
+        }
+
+        .page-counter { color: #888; min-width: 80px; text-align: right; }
+
+        #zoomRange { 
+            flex: 1; accent-color: #fff; cursor: pointer; height: 2px; 
+        }
 
         @media (max-width: 768px) {
-            .ui-wrapper { bottom: 20px; }
+            .ui-wrapper { width: 95%; bottom: 20px; }
+            .control-bar { padding: 10px 18px; gap: 10px; }
         }
     </style>
 </head>
 <body>
     <div id="viewport">
-        <div id="scroll-area">
-            <div id="canvas"><div id="flipbook"></div></div>
+        <div id="canvas">
+            <div id="flipbook"></div>
         </div>
     </div>
 
@@ -80,9 +87,7 @@
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 1414, height: 1000, size: 'fixed', 
-            showCover: true, usePortrait: false, flippingTime: 1000, 
-            startPage: 0, drawShadow: false, showPageCorners: false,
-            mobileScrollSupport: false
+            showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0
         });
 
         function loadImages() {
@@ -101,52 +106,49 @@
             document.getElementById('pageDisplay').innerText = `PAG. ${e.data + 1} / ${totalPaginas}`;
         });
 
-        // Al empezar a pasar página, bajamos el zoom un poco para que sea fluido
-        pageFlip.on('changeState', (e) => {
-            if (e.data === 'flipping') {
-                const z = document.getElementById('zoomRange');
-                if (parseFloat(z.value) > initialScale + 0.5) {
-                    z.value = initialScale + 0.5;
-                    applyScale(initialScale + 0.5);
-                }
-            }
-        });
-
         function initZoom() {
             const isMobile = window.innerWidth <= 768;
+            // Desktop: 0.65 (márgenes amplios) | Móvil: 0.95 (casi pantalla completa)
             const marginFactor = isMobile ? 0.95 : 0.65;
+            
             const scaleW = (window.innerWidth * marginFactor) / 1414;
             const scaleH = (window.innerHeight * marginFactor) / 1000;
+            
             initialScale = Math.min(scaleW, scaleH);
             
             const zoomRange = document.getElementById('zoomRange');
+            const canvas = document.getElementById('canvas');
+
             zoomRange.min = initialScale;
-            zoomRange.max = isMobile ? 4.0 : 2.5; 
+            zoomRange.max = isMobile ? 3.5 : 2.5; 
             zoomRange.value = initialScale;
             
-            applyScale(initialScale);
-            centerView();
-        }
-
-        function applyScale(scale) {
-            document.getElementById('canvas').style.transform = `scale(${scale})`;
-        }
-
-        function centerView() {
+            // Forzamos el centrado eliminando cualquier scroll residual
             const vp = document.getElementById('viewport');
-            vp.scrollLeft = (5000 - window.innerWidth) / 2;
-            vp.scrollTop = (3000 - window.innerHeight) / 2;
+            vp.overflow = 'hidden';
+            canvas.style.transform = `scale(${initialScale})`;
         }
 
         loadImages();
-        window.onload = () => {
-            initZoom();
-            setTimeout(centerView, 100);
-        };
+        window.onload = initZoom;
         window.onresize = initZoom;
 
         document.getElementById('zoomRange').addEventListener('input', (e) => {
-            applyScale(parseFloat(e.target.value));
+            const scale = parseFloat(e.target.value);
+            const canvas = document.getElementById('canvas');
+            const vp = document.getElementById('viewport');
+            
+            canvas.style.transform = `scale(${scale})`;
+            
+            // Solo activamos scroll si el usuario aumenta el zoom significativamente
+            if (scale > initialScale + 0.05) {
+                vp.style.overflow = 'auto';
+                // Cambiamos el origen a top-left para que el scroll funcione de forma natural
+                canvas.style.transformOrigin = 'center center'; 
+            } else {
+                vp.style.overflow = 'hidden';
+                vp.scrollTo(0, 0);
+            }
         });
 
         document.addEventListener('keydown', (e) => {
