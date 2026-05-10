@@ -18,14 +18,15 @@
             transform-origin: center center; padding: 500px; 
         }
 
-        /* Volvemos al tamaño fijo para que nada se chafe */
+        /* El contenedor debe tener la proporción de dos páginas A3 juntas */
         #flipbook { 
-            width: 1414px !important; height: 1000px !important; 
+            width: 1414px !important; 
+            height: 1000px !important; 
             background: transparent; 
         }
 
         .page { background: white; width: 100%; height: 100%; }
-        .page img { width: 100%; height: 100%; object-fit: fill; } /* Fill funciona bien si el contenedor es exacto */
+        .page img { width: 100%; height: 100%; object-fit: fill; }
         
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
@@ -53,15 +54,19 @@
         let initialScale = 1;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 707, // Ancho de media página
-            height: 1000,
-            size: 'fixed', // Volvemos a FIXED para evitar que se chafe
+            width: 707, // Ancho de una página A3
+            height: 1000, // Alto de una página A3
+            size: 'fixed', 
             showCover: true, 
             usePortrait: false, 
             drawShadow: false,
             flippingTime: 1000,
             startPage: 0,
-            disableCanvasShadows: true
+            // Forzamos a que no intente ajustar tamaños automáticamente
+            minWidth: 707,
+            maxWidth: 707,
+            minHeight: 1000,
+            maxHeight: 1000
         });
 
         function loadImages() {
@@ -77,10 +82,9 @@
         }
 
         function initZoom() {
-            // Calculamos el zoom para que la portada (707px) se vea centrada y con mucho margen
-            // Usamos un factor de 0.5 para que el aire alrededor sea evidente
-            const scaleW = (window.innerWidth * 0.5) / 707;
-            const scaleH = (window.innerHeight * 0.7) / 1000;
+            // Calculamos sobre el ancho de la portada (707) para el inicio
+            const scaleW = (window.innerWidth * 0.45) / 707;
+            const scaleH = (window.innerHeight * 0.8) / 1000;
             
             initialScale = Math.min(scaleW, scaleH);
             
@@ -88,7 +92,7 @@
             const canvas = document.getElementById('canvas');
 
             zoomRange.min = initialScale;
-            zoomRange.max = 1.5; 
+            zoomRange.max = 2.0; // Permitimos más zoom para detalles
             zoomRange.value = initialScale;
             canvas.style.transform = `scale(${initialScale})`;
         }
