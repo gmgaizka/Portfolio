@@ -13,29 +13,32 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            height: 100vh;
         }
 
-        /* Área de visualización */
+        /* Contenedor infinito para el zoom */
         #viewport {
             width: 100vw;
             height: 100vh;
-            overflow: auto; /* Permite scroll si el zoom es grande */
+            overflow: auto; 
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* El escalador */
+        /* El lienzo que escalamos */
         #canvas {
-            transition: transform 0.2s ease;
+            transition: transform 0.1s ease;
             transform-origin: center center;
-            padding: 50px;
+            padding: 100px;
+            display: block;
         }
 
-        /* EL LIBRO: Ahora con medidas fijas grandes */
+        /* TAMAÑO FIJO GIGANTE: 1414px es el estándar A3 horizontal */
         #flipbook { 
-            width: 1200px; 
-            height: 848px;
+            width: 1414px !important; 
+            height: 1000px !important;
         }
 
         .page { 
@@ -51,22 +54,34 @@
             object-fit: fill; 
         }
 
-        /* Barra de Zoom */
+        /* Controles estilo minimal */
         .zoom-bar {
             position: fixed;
             bottom: 30px;
-            z-index: 100;
-            background: rgba(30,30,30,0.9);
-            padding: 10px 25px;
+            z-index: 9999;
+            background: rgba(20,20,20,0.95);
+            padding: 15px 30px;
             border-radius: 50px;
-            border: 1px solid #444;
+            border: 1px solid #333;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         }
 
-        #zoomRange { width: 150px; accent-color: #fff; cursor: pointer; }
-        .zoom-bar span { color: white; font-family: sans-serif; font-size: 12px; font-weight: bold; }
+        #zoomRange { 
+            width: 200px; 
+            accent-color: #fff; 
+            cursor: pointer; 
+        }
+
+        .zoom-bar span { 
+            color: white; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-size: 11px; 
+            font-weight: bold; 
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
@@ -79,7 +94,7 @@
 
     <div class="zoom-bar">
         <span>ZOOM</span>
-        <input type="range" id="zoomRange" min="0.3" max="3" step="0.1" value="0.8">
+        <input type="range" id="zoomRange" min="0.2" max="3" step="0.05" value="0.7">
     </div>
 
     <script>
@@ -87,13 +102,18 @@
         const carpeta = 'paginas/';
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 1200,
-            height: 848,
-            size: 'stretch',
+            width: 1414,
+            height: 1000,
+            size: 'fixed', // FORZAMOS TAMAÑO FIJO
+            minWidth: 1414,
+            minHeight: 1000,
+            maxWidth: 1414,
+            maxHeight: 1000,
             showCover: true,
-            usePortrait: false, // Para ver dos páginas a la vez
-            maxShadowOpacity: 0,
-            autoSize: true
+            usePortrait: false, // Doble página
+            drawShadow: false, // ¡ADIÓS SOMBRA CENTRAL!
+            flippingTime: 1000,
+            maxShadowOpacity: 0 // Doble seguridad para las sombras
         });
 
         function loadImages() {
@@ -110,7 +130,7 @@
 
         loadImages();
 
-        // Control del Zoom
+        // Lógica de Zoom corregida
         const zoomRange = document.getElementById('zoomRange');
         const canvas = document.getElementById('canvas');
 
@@ -118,14 +138,12 @@
             canvas.style.transform = `scale(${e.target.value})`;
         });
 
-        // Ajuste inicial para que quepa en pantalla al cargar
+        // Ajuste automático al cargar según pantalla
         window.onload = () => {
-            const screenWidth = window.innerWidth;
-            if (screenWidth < 1200) {
-                const initialZoom = (screenWidth / 1300).toFixed(1);
-                zoomRange.value = initialZoom;
-                canvas.style.transform = `scale(${initialZoom})`;
-            }
+            const ratio = (window.innerWidth * 0.85) / 2828; // Calculamos para que quepa el libro abierto
+            const initialZoom = Math.min(Math.max(ratio, 0.3), 0.7);
+            zoomRange.value = initialZoom;
+            canvas.style.transform = `scale(${initialZoom})`;
         };
     </script>
 </body>
