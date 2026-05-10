@@ -121,4 +121,38 @@
             
             const zoomRange = document.getElementById('zoomRange');
             zoomRange.min = initialScale;
-            zoomRange.
+            zoomRange.max = isMobile ? 4.0 : 2.5; 
+            zoomRange.value = initialScale;
+            
+            applyScale(initialScale);
+            centerView();
+        }
+
+        function applyScale(scale) {
+            document.getElementById('canvas').style.transform = `scale(${scale})`;
+        }
+
+        function centerView() {
+            const vp = document.getElementById('viewport');
+            vp.scrollLeft = (5000 - window.innerWidth) / 2;
+            vp.scrollTop = (3000 - window.innerHeight) / 2;
+        }
+
+        loadImages();
+        window.onload = () => {
+            initZoom();
+            setTimeout(centerView, 100);
+        };
+        window.onresize = initZoom;
+
+        document.getElementById('zoomRange').addEventListener('input', (e) => {
+            applyScale(parseFloat(e.target.value));
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') pageFlip.flipNext();
+            if (e.key === 'ArrowLeft') pageFlip.flipPrev();
+        });
+    </script>
+</body>
+</html>
