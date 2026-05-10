@@ -6,68 +6,63 @@
     <title>Portfolio | Gaizka García</title>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
-        /* Aplicamos Constantia a todo el documento */
         body { 
-            margin: 0; 
-            background: #111; 
-            overflow: hidden; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
+            margin: 0; background: #111; overflow: hidden; height: 100vh; 
+            display: flex; flex-direction: column; 
             font-family: 'Constantia', 'Palatino Linotype', 'Palatino', 'Georgia', serif; 
         }
         
         #viewport { 
-            flex: 1; width: 100vw; overflow: hidden; 
+            flex: 1; width: 100vw; height: 100vh; overflow: hidden; 
             display: flex; justify-content: center; align-items: center; 
+            position: relative;
         }
 
         #canvas { 
-            display: block; transition: transform 0.2s ease-out; 
-            transform-origin: center center; padding: 600px; 
+            display: block; transition: transform 0.25s ease-out; 
+            transform-origin: center center; /* Mantiene el zoom centrado */
+            padding: 1000px; /* Espacio de sobra para scroll infinito */
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
         .page { background: white; width: 1414px !important; height: 1000px !important; }
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
-        
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        .controls-container {
+        /* INTERFAZ INTEGRADA (Como en la imagen) */
+        .ui-wrapper {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            width: 90%; max-width: 500px;
         }
 
-        .bookmark {
-            color: #888; 
-            font-size: 11px; 
-            font-weight: normal; 
-            letter-spacing: 2px;
-            text-transform: uppercase; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            font-family: 'Constantia', serif;
+        .control-bar { 
+            background: rgba(25, 25, 25, 0.85); 
+            padding: 12px 25px; border-radius: 50px; 
+            border: 1px solid #444; 
+            display: flex; align-items: center; justify-content: space-between; 
+            gap: 20px; backdrop-filter: blur(15px); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .zoom-bar { 
-            background: rgba(30,30,30,0.9); padding: 10px 25px; border-radius: 50px; 
-            border: 1px solid #444; display: flex; align-items: center; gap: 15px; backdrop-filter: blur(10px); 
+        .label { 
+            color: white; font-size: 11px; letter-spacing: 2px; 
+            text-transform: uppercase; white-space: nowrap; 
         }
-        
-        #zoomRange { width: 180px; accent-color: #fff; cursor: pointer; }
-        
-        /* Estilo específico para la etiqueta ZOOM */
-        .zoom-bar span { 
-            color: white; 
-            font-size: 11px; 
-            font-weight: normal; 
-            letter-spacing: 2px;
-            font-family: 'Constantia', serif;
+
+        .page-counter { 
+            color: #aaa; font-size: 11px; letter-spacing: 1px; 
+            white-space: nowrap; min-width: 70px; text-align: right;
+        }
+
+        #zoomRange { 
+            flex: 1; accent-color: #fff; cursor: pointer; height: 2px; 
+            outline: none; background: rgba(255,255,255,0.1);
         }
 
         @media (max-width: 768px) {
-            #canvas { padding: 100px; }
-            #zoomRange { width: 120px; }
-            .controls-container { bottom: 20px; }
+            .ui-wrapper { width: 95%; bottom: 20px; }
+            .control-bar { padding: 10px 18px; gap: 12px; }
+            #canvas { padding: 500px; } /* Ajuste para móvil */
         }
     </style>
 </head>
@@ -76,11 +71,11 @@
         <div id="canvas"><div id="flipbook"></div></div>
     </div>
 
-    <div class="controls-container">
-        <div class="bookmark" id="pageDisplay">PAG. 1 / 44</div>
-        <div class="zoom-bar">
-            <span>ZOOM</span>
+    <div class="ui-wrapper">
+        <div class="control-bar">
+            <span class="label">ZOOM</span>
             <input type="range" id="zoomRange" step="0.01">
+            <span class="page-counter" id="pageDisplay">PAG. 1 / 44</span>
         </div>
     </div>
 
@@ -112,7 +107,6 @@
 
         function initZoom() {
             const isMobile = window.innerWidth <= 768;
-            // Recuperamos el margen del 65% para PC (vuelve el aire lateral)
             const marginFactor = isMobile ? 0.95 : 0.65;
             
             const scaleW = (window.innerWidth * marginFactor) / 1414;
@@ -127,6 +121,11 @@
             zoomRange.max = isMobile ? 3.5 : 2.5; 
             zoomRange.value = initialScale;
             canvas.style.transform = `scale(${initialScale})`;
+            
+            // Centramos el scroll inicial
+            const viewport = document.getElementById('viewport');
+            viewport.scrollLeft = (canvas.offsetWidth - viewport.offsetWidth) / 2;
+            viewport.scrollTop = (canvas.offsetHeight - viewport.offsetHeight) / 2;
         }
 
         loadImages();
@@ -137,17 +136,19 @@
             const scale = parseFloat(e.target.value);
             const canvas = document.getElementById('canvas');
             const viewport = document.getElementById('viewport');
+            
             canvas.style.transform = `scale(${scale})`;
             
-            if (scale > initialScale + 0.05) {
+            // Si el zoom es mayor al inicial, permitimos scroll, si no, lo bloqueamos centrado
+            if (scale > initialScale + 0.01) {
                 viewport.style.overflow = 'auto';
-                viewport.style.alignItems = 'flex-start';
-                viewport.style.justifyContent = 'flex-start';
             } else {
                 viewport.style.overflow = 'hidden';
-                viewport.style.alignItems = 'center';
-                viewport.style.justifyContent = 'center';
-                viewport.scrollTo(0,0);
+                viewport.scrollTo({
+                    left: (canvas.offsetWidth - viewport.offsetWidth) / 2,
+                    top: (canvas.offsetHeight - viewport.offsetHeight) / 2,
+                    behavior: 'smooth'
+                });
             }
         });
 
