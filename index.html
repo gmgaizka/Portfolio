@@ -9,26 +9,24 @@
         body { 
             margin: 0; background: #111; overflow: hidden; height: 100vh; 
             display: flex; flex-direction: column; 
-            font-family: 'Constantia', 'Palatino Linotype', 'Palatino', 'Georgia', serif; 
+            font-family: 'Constantia', serif; 
         }
         
-        /* Contenedor principal que permite el scroll cuando hay zoom */
+        /* Viewport limpio, sin scroll de inicio */
         #viewport { 
             flex: 1; width: 100vw; height: 100vh; 
-            overflow: auto; /* Permitimos scroll */
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            background: #111;
+            overflow: hidden; 
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
         }
 
-        /* Contenedor del flipbook que escala */
+        /* El canvas flota en el centro */
         #canvas { 
             display: block; 
-            transition: transform 0.25s ease-out; 
+            transition: transform 0.2s ease-out; 
             transform-origin: center center;
-            flex-shrink: 0; /* Evita que el contenedor se colapse */
-            margin: 500px; /* Margen de seguridad para poder scrollear al hacer zoom */
+            will-change: transform;
+            z-index: 1;
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
@@ -36,43 +34,42 @@
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        /* INTERFAZ INTEGRADA (Constantia) */
+        /* INTERFAZ CONSTANTIA */
         .ui-wrapper {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
             width: 90%; max-width: 500px;
         }
 
         .control-bar { 
-            background: rgba(25, 25, 25, 0.85); 
+            background: rgba(20, 20, 20, 0.85); 
             padding: 12px 25px; border-radius: 50px; 
-            border: 1px solid #444; 
+            border: 1px solid #333; 
             display: flex; align-items: center; justify-content: space-between; 
             gap: 20px; backdrop-filter: blur(15px); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .label, .page-counter { 
             color: white; font-size: 11px; letter-spacing: 2px; 
-            text-transform: uppercase; white-space: nowrap; 
+            text-transform: uppercase; white-space: nowrap; font-family: 'Constantia', serif;
         }
 
-        .page-counter { color: #aaa; min-width: 80px; text-align: right; }
+        .page-counter { color: #888; min-width: 80px; text-align: right; }
 
         #zoomRange { 
             flex: 1; accent-color: #fff; cursor: pointer; height: 2px; 
-            outline: none; background: rgba(255,255,255,0.1);
         }
 
         @media (max-width: 768px) {
             .ui-wrapper { width: 95%; bottom: 20px; }
             .control-bar { padding: 10px 18px; gap: 10px; }
-            #canvas { margin: 300px; } /* Menos margen en móvil */
         }
     </style>
 </head>
 <body>
     <div id="viewport">
-        <div id="canvas"><div id="flipbook"></div></div>
+        <div id="canvas">
+            <div id="flipbook"></div>
+        </div>
     </div>
 
     <div class="ui-wrapper">
@@ -111,6 +108,7 @@
 
         function initZoom() {
             const isMobile = window.innerWidth <= 768;
+            // Desktop: 0.65 (márgenes amplios) | Móvil: 0.95 (casi pantalla completa)
             const marginFactor = isMobile ? 0.95 : 0.65;
             
             const scaleW = (window.innerWidth * marginFactor) / 1414;
@@ -124,30 +122,33 @@
             zoomRange.min = initialScale;
             zoomRange.max = isMobile ? 3.5 : 2.5; 
             zoomRange.value = initialScale;
-            canvas.style.transform = `scale(${initialScale})`;
             
-            // Recentramos la vista
-            centerView();
-        }
-
-        function centerView() {
-            const viewport = document.getElementById('viewport');
-            const canvas = document.getElementById('canvas');
-            viewport.scrollLeft = (canvas.offsetWidth + 1000 - viewport.offsetWidth) / 2;
-            viewport.scrollTop = (canvas.offsetHeight + 1000 - viewport.offsetHeight) / 2;
+            // Forzamos el centrado eliminando cualquier scroll residual
+            const vp = document.getElementById('viewport');
+            vp.overflow = 'hidden';
+            canvas.style.transform = `scale(${initialScale})`;
         }
 
         loadImages();
-        window.onload = () => {
-            initZoom();
-            setTimeout(centerView, 100); // Pequeño delay para asegurar que el DOM cargó
-        };
+        window.onload = initZoom;
         window.onresize = initZoom;
 
         document.getElementById('zoomRange').addEventListener('input', (e) => {
             const scale = parseFloat(e.target.value);
             const canvas = document.getElementById('canvas');
+            const vp = document.getElementById('viewport');
+            
             canvas.style.transform = `scale(${scale})`;
+            
+            // Solo activamos scroll si el usuario aumenta el zoom significativamente
+            if (scale > initialScale + 0.05) {
+                vp.style.overflow = 'auto';
+                // Cambiamos el origen a top-left para que el scroll funcione de forma natural
+                canvas.style.transformOrigin = 'center center'; 
+            } else {
+                vp.style.overflow = 'hidden';
+                vp.scrollTo(0, 0);
+            }
         });
 
         document.addEventListener('keydown', (e) => {
