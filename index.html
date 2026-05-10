@@ -6,7 +6,16 @@
     <title>Portfolio | Gaizka García</title>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
-        body { margin: 0; background: #111; overflow: hidden; height: 100vh; display: flex; flex-direction: column; font-family: sans-serif; }
+        /* Aplicamos Constantia a todo el documento */
+        body { 
+            margin: 0; 
+            background: #111; 
+            overflow: hidden; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            font-family: 'Constantia', 'Palatino Linotype', 'Palatino', 'Georgia', serif; 
+        }
         
         #viewport { 
             flex: 1; width: 100vw; overflow: hidden; 
@@ -15,7 +24,7 @@
 
         #canvas { 
             display: block; transition: transform 0.2s ease-out; 
-            transform-origin: center center; padding: 600px; /* Padding generoso para el área de scroll */
+            transform-origin: center center; padding: 600px; 
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
@@ -30,19 +39,33 @@
         }
 
         .bookmark {
-            color: #888; font-size: 10px; font-weight: bold; letter-spacing: 2px;
-            text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            color: #888; 
+            font-size: 11px; 
+            font-weight: normal; 
+            letter-spacing: 2px;
+            text-transform: uppercase; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            font-family: 'Constantia', serif;
         }
 
         .zoom-bar { 
             background: rgba(30,30,30,0.9); padding: 10px 25px; border-radius: 50px; 
             border: 1px solid #444; display: flex; align-items: center; gap: 15px; backdrop-filter: blur(10px); 
         }
+        
         #zoomRange { width: 180px; accent-color: #fff; cursor: pointer; }
-        .zoom-bar span { color: white; font-size: 10px; font-weight: bold; letter-spacing: 2px; }
+        
+        /* Estilo específico para la etiqueta ZOOM */
+        .zoom-bar span { 
+            color: white; 
+            font-size: 11px; 
+            font-weight: normal; 
+            letter-spacing: 2px;
+            font-family: 'Constantia', serif;
+        }
 
         @media (max-width: 768px) {
-            #canvas { padding: 100px; } /* Menos padding en móvil */
+            #canvas { padding: 100px; }
             #zoomRange { width: 120px; }
             .controls-container { bottom: 20px; }
         }
@@ -89,8 +112,7 @@
 
         function initZoom() {
             const isMobile = window.innerWidth <= 768;
-            
-            // LA CLAVE: margen del 65% en PC (margen grande) y 95% en móvil (margen pequeño)
+            // Recuperamos el margen del 65% para PC (vuelve el aire lateral)
             const marginFactor = isMobile ? 0.95 : 0.65;
             
             const scaleW = (window.innerWidth * marginFactor) / 1414;
