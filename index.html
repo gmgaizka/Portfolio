@@ -12,21 +12,26 @@
             font-family: 'Constantia', serif; 
         }
         
-        /* Viewport limpio, sin scroll de inicio */
+        /* Ventana que mira al área gigante */
         #viewport { 
             flex: 1; width: 100vw; height: 100vh; 
-            overflow: hidden; 
+            overflow: auto; /* Permitimos scroll siempre */
+            display: block; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Área gigante para que el scroll nunca se acabe */
+        #scroll-area {
+            width: 5000px; height: 3000px;
             position: relative;
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* El canvas flota en el centro */
         #canvas { 
             display: block; 
             transition: transform 0.2s ease-out; 
             transform-origin: center center;
             will-change: transform;
-            z-index: 1;
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
@@ -39,25 +44,15 @@
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
             width: 90%; max-width: 500px;
         }
-
         .control-bar { 
-            background: rgba(20, 20, 20, 0.85); 
+            background: rgba(20, 20, 20, 0.9); 
             padding: 12px 25px; border-radius: 50px; 
-            border: 1px solid #333; 
-            display: flex; align-items: center; justify-content: space-between; 
-            gap: 20px; backdrop-filter: blur(15px); 
+            border: 1px solid #444; display: flex; align-items: center; justify-content: space-between; 
+            gap: 20px; backdrop-filter: blur(15px);
         }
-
-        .label, .page-counter { 
-            color: white; font-size: 11px; letter-spacing: 2px; 
-            text-transform: uppercase; white-space: nowrap; font-family: 'Constantia', serif;
-        }
-
+        .label, .page-counter { color: white; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
         .page-counter { color: #888; min-width: 80px; text-align: right; }
-
-        #zoomRange { 
-            flex: 1; accent-color: #fff; cursor: pointer; height: 2px; 
-        }
+        #zoomRange { flex: 1; accent-color: #fff; cursor: pointer; height: 2px; }
 
         @media (max-width: 768px) {
             .ui-wrapper { width: 95%; bottom: 20px; }
@@ -67,8 +62,10 @@
 </head>
 <body>
     <div id="viewport">
-        <div id="canvas">
-            <div id="flipbook"></div>
+        <div id="scroll-area">
+            <div id="canvas">
+                <div id="flipbook"></div>
+            </div>
         </div>
     </div>
 
@@ -87,7 +84,8 @@
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 1414, height: 1000, size: 'fixed', 
-            showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0
+            showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0,
+            drawShadow: false // Quitamos la raya central que pediste antes
         });
 
         function loadImages() {
@@ -108,47 +106,37 @@
 
         function initZoom() {
             const isMobile = window.innerWidth <= 768;
-            // Desktop: 0.65 (márgenes amplios) | Móvil: 0.95 (casi pantalla completa)
             const marginFactor = isMobile ? 0.95 : 0.65;
-            
             const scaleW = (window.innerWidth * marginFactor) / 1414;
             const scaleH = (window.innerHeight * marginFactor) / 1000;
-            
             initialScale = Math.min(scaleW, scaleH);
             
             const zoomRange = document.getElementById('zoomRange');
-            const canvas = document.getElementById('canvas');
-
             zoomRange.min = initialScale;
-            zoomRange.max = isMobile ? 3.5 : 2.5; 
+            zoomRange.max = isMobile ? 4.0 : 2.5; 
             zoomRange.value = initialScale;
             
-            // Forzamos el centrado eliminando cualquier scroll residual
+            document.getElementById('canvas').style.transform = `scale(${initialScale})`;
+            centerView();
+        }
+
+        function centerView() {
             const vp = document.getElementById('viewport');
-            vp.overflow = 'hidden';
-            canvas.style.transform = `scale(${initialScale})`;
+            // Centramos el scroll en el área gigante de 5000x3000
+            vp.scrollLeft = (5000 - window.innerWidth) / 2;
+            vp.scrollTop = (3000 - window.innerHeight) / 2;
         }
 
         loadImages();
-        window.onload = initZoom;
+        window.onload = () => {
+            initZoom();
+            setTimeout(centerView, 100); // Pequeño delay para asegurar el render
+        };
         window.onresize = initZoom;
 
         document.getElementById('zoomRange').addEventListener('input', (e) => {
             const scale = parseFloat(e.target.value);
-            const canvas = document.getElementById('canvas');
-            const vp = document.getElementById('viewport');
-            
-            canvas.style.transform = `scale(${scale})`;
-            
-            // Solo activamos scroll si el usuario aumenta el zoom significativamente
-            if (scale > initialScale + 0.05) {
-                vp.style.overflow = 'auto';
-                // Cambiamos el origen a top-left para que el scroll funcione de forma natural
-                canvas.style.transformOrigin = 'center center'; 
-            } else {
-                vp.style.overflow = 'hidden';
-                vp.scrollTo(0, 0);
-            }
+            document.getElementById('canvas').style.transform = `scale(${scale})`;
         });
 
         document.addEventListener('keydown', (e) => {
