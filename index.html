@@ -15,40 +15,42 @@
 
         #canvas { 
             display: block; transition: transform 0.2s ease-out; 
-            transform-origin: center center; padding: 600px; 
+            transform-origin: center center; padding: 400px; /* Reducido para mejor control */
         }
 
-        /* LIBRO ABIERTO: 2 x A3 Horizontales */
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
-
-        /* CADA PÁGINA: A3 Horizontal individual */
         .page { background: white; width: 1414px !important; height: 1000px !important; }
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        /* INTERFAZ MINIMALISTA */
+        /* INTERFAZ ADAPTATIVA */
         .controls-container {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            width: 90%; /* Ocupa casi todo el ancho en móvil */
+            max-width: 300px;
         }
 
         .bookmark {
-            color: #888; font-size: 10px; font-weight: bold; letter-spacing: 2px;
-            text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            color: #888; font-size: 9px; font-weight: bold; letter-spacing: 2px;
+            text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
 
         .zoom-bar { 
-            background: rgba(30,30,30,0.9); padding: 10px 25px; border-radius: 50px; 
-            border: 1px solid #444; display: flex; align-items: center; gap: 15px; backdrop-filter: blur(10px); 
+            background: rgba(25,25,25,0.85); padding: 8px 20px; border-radius: 50px; 
+            border: 1px solid #333; display: flex; align-items: center; gap: 12px; 
+            backdrop-filter: blur(10px); width: 100%; box-sizing: border-box;
         }
-        #zoomRange { width: 180px; accent-color: #fff; cursor: pointer; }
-        .zoom-bar span { color: white; font-size: 10px; font-weight: bold; letter-spacing: 2px; }
+        
+        #zoomRange { flex: 1; accent-color: #fff; cursor: pointer; height: 4px; }
+        .zoom-bar span { color: white; font-size: 8px; font-weight: bold; letter-spacing: 2px; }
 
-        /* Ajustes para móvil */
+        /* AJUSTES ESPECÍFICOS PARA TELÉFONOS */
         @media (max-width: 768px) {
-            #canvas { padding: 100px; }
-            #zoomRange { width: 120px; }
+            #canvas { padding: 80px; } /* Menos margen para que el libro se vea más grande al inicio */
+            .controls-container { bottom: 20px; }
+            .zoom-bar { padding: 6px 15px; }
         }
     </style>
 </head>
@@ -59,7 +61,6 @@
 
     <div class="controls-container">
         <div class="bookmark" id="pageDisplay">PAG. 1 / 44</div>
-        
         <div class="zoom-bar">
             <span>ZOOM</span>
             <input type="range" id="zoomRange" step="0.01">
@@ -72,14 +73,15 @@
         let initialScale = 1;
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
-            width: 1414, // Ancho A3 Horizontal
-            height: 1000, // Alto A3 Horizontal
+            width: 1414,
+            height: 1000,
             size: 'fixed', 
             showCover: true, 
-            usePortrait: false, 
+            usePortrait: false, // Mantenemos spread doble para que se vea como un libro real
             drawShadow: false,
-            flippingTime: 1000,
-            startPage: 0
+            flippingTime: 800,
+            startPage: 0,
+            mobileScrollSupport: false // Desactivamos para que no interfiera con nuestro zoom
         });
 
         function loadImages() {
@@ -94,14 +96,14 @@
             pageFlip.loadFromHTML(pages);
         }
 
-        // Lógica del marcapáginas: Actualiza el texto al pasar página
         pageFlip.on('flip', (e) => {
             document.getElementById('pageDisplay').innerText = `PAG. ${e.data + 1} / ${totalPaginas}`;
         });
 
         function initZoom() {
             const isMobile = window.innerWidth <= 768;
-            const marginFactor = isMobile ? 0.9 : 0.7;
+            // En móvil el libro ocupa el 95% del ancho para no desperdiciar pantalla
+            const marginFactor = isMobile ? 0.95 : 0.75;
             
             const scaleW = (window.innerWidth * marginFactor) / 1414;
             const scaleH = (window.innerHeight * marginFactor) / 1000;
@@ -112,7 +114,8 @@
             const canvas = document.getElementById('canvas');
 
             zoomRange.min = initialScale;
-            zoomRange.max = isMobile ? 3.0 : 2.0; 
+            // En móvil permitimos un zoom mucho más agresivo (4x) para leer detalles
+            zoomRange.max = isMobile ? 4.0 : 2.5; 
             zoomRange.value = initialScale;
             canvas.style.transform = `scale(${initialScale})`;
         }
@@ -128,7 +131,7 @@
             
             canvas.style.transform = `scale(${scale})`;
             
-            if (scale > initialScale + 0.05) {
+            if (scale > initialScale + 0.02) {
                 viewport.style.overflow = 'auto';
                 viewport.style.alignItems = 'flex-start';
                 viewport.style.justifyContent = 'flex-start';
@@ -140,7 +143,6 @@
             }
         });
 
-        // Navegación con flechas del teclado (Extra para PC)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight') pageFlip.flipNext();
             if (e.key === 'ArrowLeft') pageFlip.flipPrev();
