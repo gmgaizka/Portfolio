@@ -10,14 +10,30 @@
             margin: 0; 
             background: #1a1a1a; 
             display: flex; 
+            flex-direction: column;
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
             overflow: hidden; 
         }
 
+        /* Contenedor que permite el scroll cuando hay zoom */
+        #zoom-container {
+            width: 100vw;
+            height: 85vh;
+            overflow: auto; /* Permite moverte por el plano cuando hay zoom */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: grab;
+        }
+
+        #flipbook-wrapper {
+            transition: transform 0.2s ease-out;
+            transform-origin: center center;
+        }
+
         #flipbook { 
-            /* MÁS MARGEN: Ahora el libro ocupa solo el 60% del ancho */
             width: 60vw; 
             height: 65vh; 
         }
@@ -26,7 +42,6 @@
             background: white; 
             width: 100%; 
             height: 100%; 
-            /* Sombra suave en los bordes exteriores solamente */
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
         }
 
@@ -35,10 +50,48 @@
             height: 100%; 
             object-fit: stretch; 
         }
+
+        /* BARRA DE ZOOM ESTILO ISSUU */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .controls input[type=range] {
+            cursor: pointer;
+            width: 150px;
+            accent-color: #ffffff;
+        }
+
+        .controls span {
+            color: white;
+            font-family: sans-serif;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
-    <div id="flipbook"></div>
+
+    <div id="zoom-container">
+        <div id="flipbook-wrapper">
+            <div id="flipbook"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <span>Zoom</span>
+        <input type="range" id="zoom-slider" min="1" max="3" step="0.1" value="1">
+    </div>
 
     <script>
         const totalPaginas = 44; 
@@ -48,10 +101,7 @@
             width: 1414, 
             height: 1000, 
             size: 'stretch',
-            
-            // ELIMINAR SOMBRA CENTRAL: Ponemos la opacidad a 0
             maxShadowOpacity: 0, 
-            
             showCover: true, 
             mobileScrollSupport: true,
             autoSize: true,
@@ -72,6 +122,22 @@
         }
 
         loadImages();
+
+        // LÓGICA DEL ZOOM
+        const slider = document.getElementById('zoom-slider');
+        const wrapper = document.getElementById('flipbook-wrapper');
+
+        slider.addEventListener('input', (e) => {
+            const zoomValue = e.target.value;
+            wrapper.style.transform = `scale(${zoomValue})`;
+            
+            // Si hay zoom, cambiamos el cursor para indicar que se puede arrastrar
+            if (zoomValue > 1) {
+                document.getElementById('zoom-container').style.cursor = 'move';
+            } else {
+                document.getElementById('zoom-container').style.cursor = 'grab';
+            }
+        });
     </script>
 </body>
 </html>
