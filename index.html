@@ -17,7 +17,7 @@
 
     <script>
         const totalPaginas = 44; 
-        const carpeta = 'PAGINAS/'; // <--- CAMBIADO A MAYÚSCULAS
+        const carpeta = 'paginas/'; // Carpeta en minúsculas
 
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 900,
@@ -34,8 +34,8 @@
                 const div = document.createElement('div');
                 div.className = 'page';
                 
-                // AJUSTADO: Portfolio.JPG y Portfolio2.JPG (con JPG en mayúsculas)
-                let nombreArchivo = (i === 1) ? 'Portfolio.JPG' : `Portfolio${i}.JPG`;
+                // Buscamos: Portfolio.jpg, Portfolio2.jpg, Portfolio3.jpg...
+                let nombreArchivo = (i === 1) ? 'Portfolio.jpg' : `Portfolio${i}.jpg`;
                 
                 div.innerHTML = `<img src="${carpeta}${nombreArchivo}" alt="Página ${i}">`;
                 pages.push(div);
