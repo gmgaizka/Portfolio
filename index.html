@@ -17,25 +17,30 @@
             overflow: hidden; 
         }
 
-        /* Contenedor que permite el scroll cuando hay zoom */
+        /* Contenedor principal */
         #zoom-container {
-            width: 100vw;
-            height: 85vh;
-            overflow: auto; /* Permite moverte por el plano cuando hay zoom */
+            width: 100%;
+            height: 90vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: grab;
+            overflow: auto; /* Permite scroll cuando haces zoom */
         }
 
+        /* Este es el que escalamos */
         #flipbook-wrapper {
             transition: transform 0.2s ease-out;
-            transform-origin: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
+        /* TAMAÑO DEL LIBRO: Lo subimos para que no se vea pequeño */
         #flipbook { 
-            width: 60vw; 
-            height: 65vh; 
+            width: 1200px; /* Tamaño fijo en píxeles para que no se pierda */
+            height: 848px; /* Manteniendo proporción A3 horizontal */
+            max-width: 90vw; /* Pero que no se salga de la pantalla en monitores pequeños */
+            max-height: 80vh;
         }
 
         .page { 
@@ -51,31 +56,31 @@
             object-fit: stretch; 
         }
 
-        /* BARRA DE ZOOM ESTILO ISSUU */
+        /* CONTROLES */
         .controls {
             position: fixed;
-            bottom: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 20px;
-            border-radius: 30px;
-            backdrop-filter: blur(10px);
+            bottom: 20px;
+            background: rgba(40, 40, 40, 0.9);
+            padding: 12px 25px;
+            border-radius: 50px;
             display: flex;
             align-items: center;
             gap: 15px;
             z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .controls input[type=range] {
-            cursor: pointer;
+        #zoom-slider {
             width: 150px;
-            accent-color: #ffffff;
+            cursor: pointer;
+            accent-color: #fff;
         }
 
         .controls span {
             color: white;
             font-family: sans-serif;
-            font-size: 12px;
-            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: bold;
             letter-spacing: 1px;
         }
     </style>
@@ -89,8 +94,8 @@
     </div>
 
     <div class="controls">
-        <span>Zoom</span>
-        <input type="range" id="zoom-slider" min="1" max="3" step="0.1" value="1">
+        <span>ZOOM</span>
+        <input type="range" id="zoom-slider" min="1" max="2.5" step="0.1" value="1">
     </div>
 
     <script>
@@ -123,20 +128,13 @@
 
         loadImages();
 
-        // LÓGICA DEL ZOOM
+        // Lógica del slider
         const slider = document.getElementById('zoom-slider');
         const wrapper = document.getElementById('flipbook-wrapper');
 
         slider.addEventListener('input', (e) => {
-            const zoomValue = e.target.value;
-            wrapper.style.transform = `scale(${zoomValue})`;
-            
-            // Si hay zoom, cambiamos el cursor para indicar que se puede arrastrar
-            if (zoomValue > 1) {
-                document.getElementById('zoom-container').style.cursor = 'move';
-            } else {
-                document.getElementById('zoom-container').style.cursor = 'grab';
-            }
+            const val = e.target.value;
+            wrapper.style.transform = `scale(${val})`;
         });
     </script>
 </body>
