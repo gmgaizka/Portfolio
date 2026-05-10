@@ -6,43 +6,45 @@
     <title>Portfolio | Gaizka García</title>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <style>
-        body { margin: 0; background: #111; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        body { margin: 0; background: #111; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
         
+        /* Contenedor principal que permite el scroll */
         #viewport { 
+            flex: 1;
             width: 100vw; 
-            height: 100vh; 
-            overflow: auto; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
+            overflow: auto; /* Permite scroll en todas direcciones al hacer zoom */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            scroll-behavior: smooth;
         }
         
+        /* El lienzo donde vive el libro */
         #canvas { 
-            transition: transform 0.1s ease; 
+            transition: transform 0.2s ease-out; 
             transform-origin: center center; 
-            padding: 100px; 
+            padding: 200px; /* Espacio extra para que el zoom no choque con los bordes */
+            display: inline-block;
         }
         
-        /* Contenedor del flipbook con proporciones A3 */
         #flipbook { 
             width: 1414px !important; 
             height: 1000px !important; 
-            background: transparent; 
+            background: white; 
         }
         
         .page { background: white; width: 100%; height: 100%; }
         .page img { width: 100%; height: 100%; object-fit: fill; }
 
-        /* Eliminación total de sombras y canvas de efectos */
-        canvas, .st-page-shadow { 
-            display: none !important; 
-            opacity: 0 !important; 
-            visibility: hidden !important;
-        }
+        /* Seguimos bloqueando las sombras */
+        canvas, .st-page-shadow { display: none !important; opacity: 0 !important; visibility: hidden !important; }
 
+        /* Controles */
         .zoom-bar { 
             position: fixed; 
             bottom: 30px; 
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 9999; 
             background: rgba(20,20,20,0.95); 
             padding: 15px 30px; 
@@ -51,7 +53,6 @@
             display: flex; 
             align-items: center; 
             gap: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         }
         
         #zoomRange { width: 200px; accent-color: #fff; cursor: pointer; }
@@ -79,20 +80,13 @@
             width: 1414,
             height: 1000,
             size: 'fixed',
-            
-            // CONFIGURACIÓN PARA PORTADA ÚNICA
             showCover: true, 
             usePortrait: false, 
-            startPage: 0,
-            
-            // DESACTIVACIÓN DE SOMBRAS
             drawShadow: false,
             maxShadowOpacity: 0,
             showShadows: false,
-            
             flippingTime: 1000,
-            mobileScrollSupport: true,
-            autoSize: true
+            mobileScrollSupport: true
         });
 
         function loadImages() {
@@ -109,19 +103,30 @@
 
         loadImages();
 
-        // Lógica de Zoom
         const zoomRange = document.getElementById('zoomRange');
         const canvas = document.getElementById('canvas');
+        const viewport = document.getElementById('viewport');
+
         zoomRange.addEventListener('input', (e) => {
-            canvas.style.transform = `scale(${e.target.value})`;
+            const scale = e.target.value;
+            canvas.style.transform = `scale(${scale})`;
+            
+            // Re-centrar el scroll automáticamente al cambiar el zoom
+            // Esto evita que se "pierda" el libro
+            if (scale > 1) {
+                viewport.style.alignItems = 'flex-start';
+                viewport.style.justifyContent = 'flex-start';
+            } else {
+                viewport.style.alignItems = 'center';
+                viewport.style.justifyContent = 'center';
+            }
         });
 
-        // Ajuste inicial para que la portada se vea bien al cargar
         window.onload = () => {
-            const initialScale = (window.innerWidth * 0.45) / 1414; 
-            const val = Math.min(Math.max(initialScale, 0.2), 0.7);
+            const initialScale = (window.innerWidth * 0.4) / 1414; 
+            const val = Math.min(Math.max(initialScale, 0.1), 0.7);
             zoomRange.value = val;
-            canvas.style.transform = `scale(${initialScale})`;
+            canvas.style.transform = `scale(${val})`;
         };
     </script>
 </body>
