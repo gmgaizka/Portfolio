@@ -95,4 +95,51 @@
         });
 
         // También reseteamos si el usuario empieza a arrastrar la página
-        pageFlip.on('changeState', (e
+        pageFlip.on('changeState', (e) => {
+            if (e.data === 'flipping') resetZoom();
+        });
+
+        function initZoom() {
+            const isMobile = window.innerWidth <= 768;
+            const marginFactor = isMobile ? 0.95 : 0.65;
+            const scaleW = (window.innerWidth * marginFactor) / 1414;
+            const scaleH = (window.innerHeight * marginFactor) / 1000;
+            initialScale = Math.min(scaleW, scaleH);
+            
+            const zoomRange = document.getElementById('zoomRange');
+            zoomRange.min = initialScale;
+            zoomRange.max = isMobile ? 4.0 : 2.5; 
+            zoomRange.value = initialScale;
+            
+            applyScale(initialScale);
+        }
+
+        function applyScale(scale) {
+            const canvas = document.getElementById('canvas');
+            const vp = document.getElementById('viewport');
+            canvas.style.transform = `scale(${scale})`;
+            vp.style.overflow = (scale > initialScale + 0.02) ? 'auto' : 'hidden';
+            if (scale <= initialScale + 0.02) vp.scrollTo(0, 0);
+        }
+
+        function resetZoom() {
+            const zoomRange = document.getElementById('zoomRange');
+            zoomRange.value = initialScale;
+            applyScale(initialScale);
+        }
+
+        loadImages();
+        window.onload = initZoom;
+        window.onresize = initZoom;
+
+        document.getElementById('zoomRange').addEventListener('input', (e) => {
+            applyScale(parseFloat(e.target.value));
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') pageFlip.flipNext();
+            if (e.key === 'ArrowLeft') pageFlip.flipPrev();
+        });
+    </script>
+</body>
+</html>
