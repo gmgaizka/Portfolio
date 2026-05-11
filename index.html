@@ -12,62 +12,50 @@
             font-family: 'Constantia', serif; 
         }
         
-        /* Ventana que mira al área gigante */
         #viewport { 
             flex: 1; width: 100vw; height: 100vh; 
-            overflow: hidden; /* Se activa con el zoom */
+            overflow: hidden; 
             display: block; 
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Área gigante para permitir scroll en todas direcciones */
         #scroll-area {
-            width: 5000px; height: 3000px;
+            width: 6000px; height: 4000px;
             position: relative;
             display: flex; justify-content: center; align-items: center;
         }
 
         #canvas { 
-            display: block; 
+            /* Forzamos un ancho mayor al libro para crear los márgenes laterales */
+            width: 3400px; 
+            height: 1400px;
+            display: flex; justify-content: center; align-items: center;
             transition: transform 0.2s ease-out; 
             transform-origin: center center;
             will-change: transform;
-            /* Estos son los márgenes laterales que faltaban */
-            padding: 100px 200px; 
         }
 
         #flipbook { width: 2828px !important; height: 1000px !important; background: transparent; }
         .page { background: white; width: 1414px !important; height: 1000px !important; }
         .page img { width: 100% !important; height: 100% !important; object-fit: fill !important; }
         
-        /* Ocultar elementos técnicos de la librería */
         canvas, .st-page-shadow { display: none !important; opacity: 0 !important; }
 
-        /* INTERFAZ ELEGANTE */
         .ui-wrapper {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;
             width: 90%; max-width: 500px;
         }
         .control-bar { 
-            background: rgba(20, 20, 20, 0.9); 
-            padding: 12px 25px; border-radius: 50px; 
+            background: rgba(20, 20, 20, 0.9); padding: 12px 25px; border-radius: 50px; 
             border: 1px solid #444; display: flex; align-items: center; justify-content: space-between; 
             gap: 20px; backdrop-filter: blur(15px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .label, .page-counter { color: white; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
         .page-counter { color: #888; min-width: 80px; text-align: right; }
         #zoomRange { flex: 1; accent-color: #fff; cursor: pointer; height: 2px; }
 
-        /* Barras de scroll discretas */
         #viewport::-webkit-scrollbar { width: 5px; height: 5px; }
         #viewport::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-
-        @media (max-width: 768px) {
-            .ui-wrapper { width: 95%; bottom: 20px; }
-            .control-bar { padding: 10px 18px; gap: 10px; }
-            #canvas { padding: 50px 100px; } /* Márgenes algo más pequeños en móvil */
-        }
     </style>
 </head>
 <body>
@@ -95,8 +83,7 @@
         const pageFlip = new St.PageFlip(document.getElementById('flipbook'), {
             width: 1414, height: 1000, size: 'fixed', 
             showCover: true, usePortrait: false, flippingTime: 1000, startPage: 0,
-            drawShadow: false,
-            showPageCorners: false
+            drawShadow: false, showPageCorners: false
         });
 
         function loadImages() {
@@ -117,7 +104,8 @@
 
         function initZoom() {
             const isMobile = window.innerWidth <= 768;
-            const marginFactor = isMobile ? 0.90 : 0.65;
+            // Reducimos un poco el margin factor para asegurar que se vean los márgenes negros
+            const marginFactor = isMobile ? 0.85 : 0.60;
             const scaleW = (window.innerWidth * marginFactor) / 1414;
             const scaleH = (window.innerHeight * marginFactor) / 1000;
             initialScale = Math.min(scaleW, scaleH);
@@ -145,8 +133,8 @@
 
         function centerView() {
             const vp = document.getElementById('viewport');
-            vp.scrollLeft = (5000 - window.innerWidth) / 2;
-            vp.scrollTop = (3000 - window.innerHeight) / 2;
+            vp.scrollLeft = (6000 - window.innerWidth) / 2;
+            vp.scrollTop = (4000 - window.innerHeight) / 2;
         }
 
         loadImages();
